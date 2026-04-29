@@ -31,12 +31,13 @@ namespace PulseStudio {
 
 		float GetX() const { return m_X; }
 		float GetY() const { return m_Y; }
+		float GetWidth() const { return m_Width; }
+		float GetHeight() const { return m_Height; }
 
 		std::string GetText() const { return m_Text; }
     private:
         std::string m_Text;
-        float m_X, m_Y;
-        float m_Width, m_Height;
+        float m_X, m_Y, m_Width, m_Height;
         float m_Color[4] = { 0.2f, 0.2f, 0.2f, 1.0f };
         bool m_Hovered = false;
         std::function<void()> m_Callback;

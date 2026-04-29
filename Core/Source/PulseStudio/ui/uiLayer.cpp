@@ -67,6 +67,8 @@ namespace PulseStudio {
 
 		if (menuBar) menuBar->OnUpdate(deltaTime);
 
+		MouseCircle::Get().OnUpdate(deltaTime);
+
 		for (auto* win : m_Windows)
 			win->OnUpdate(deltaTime);
 	}
@@ -74,6 +76,9 @@ namespace PulseStudio {
 	bool uiLayer::OnEvent(Event& event)
 	{
 		if (menuBar && menuBar->OnEvent(event))
+			return true;
+
+		if (MouseCircle::Get().OnEvent(event))
 			return true;
 
 		for (auto it = m_Windows.rbegin(); it != m_Windows.rend(); ++it)

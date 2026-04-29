@@ -11,6 +11,9 @@
 #include "PulseStudio/Events/KeyEvent.h"
 #include "PulseStudio/Events/MouseEvent.h"
 
+#include "MouseCircle.h"
+#include "uiMenuBar.h"
+
 namespace PulseStudio
 {
 
@@ -18,21 +21,15 @@ namespace PulseStudio
 		: m_name(name)
 	{
 		m_name = name;
-		if (ThemeManager::GetCurrentTheme() == Theme::Dark || ThemeManager::GetCurrentTheme() == Theme::Cool_Slate || ThemeManager::GetCurrentTheme() == Theme::Moonlight || ThemeManager::GetCurrentTheme() == Theme::Forest || ThemeManager::GetCurrentTheme() == Theme::Grape)
+		if (ThemeManager::IsDarkTheme())
 		{
 			PS_CORE_TRACE("Use dark ui theme.");
 			SetStyle(true); // Dark
 		}
-		else if (ThemeManager::GetCurrentTheme() == Theme::Light || ThemeManager::GetCurrentTheme() == Theme::Cool_Breeze || ThemeManager::GetCurrentTheme() == Theme::Icy_Mint || ThemeManager::GetCurrentTheme() == Theme::Sand || ThemeManager::GetCurrentTheme() == Theme::Ice)
+		else
 		{
 			PS_CORE_TRACE("Use light ui theme.");
 			SetStyle(false); // Light
-		}
-		else
-		{
-			PS_CORE_ERROR("Unknow this theme!");
-			PS_CORE_TRACE("Use dark ui theme!");
-			SetStyle(true); // Dark
 		}
 
 		static bool fontLoaded = false;
@@ -65,6 +62,90 @@ namespace PulseStudio
 		if (!m_IsVisible)
 			return;
 		DrawContent();
+	}
+
+	static bool IsSegmentIntersectCircle(float x1, float y1, float x2, float y2,
+		float cx, float cy, float radius)
+	{
+		float dx = x2 - x1;
+		float dy = y2 - y1;
+		float t = ((cx - x1) * dx + (cy - y1) * dy) / (dx * dx + dy * dy);
+		t = std::max(0.0f, std::min(1.0f, t));
+		float closestX = x1 + t * dx;
+		float closestY = y1 + t * dy;
+		float distSq = (closestX - cx) * (closestX - cx) + (closestY - cy) * (closestY - cy);
+		return distSq <= radius * radius;
+	}
+
+	static void DrawHighlightedRectBorder(float x, float y, float w, float h, int segmentsPerSide = 100)
+	{
+		auto& circle = MouseCircle::Get();
+		float cx = circle.GetX(), cy = circle.GetY(), radius = circle.GetRadius();
+
+		const float defaultColor[3] = { 0.3f, 0.3f, 0.3f };
+		const float highlightColor[3] = { 1.0f, 1.0f, 1.0f };
+		const float alpha = 0.7f;
+
+		glLineWidth(2.0f);
+		glBegin(GL_LINES);
+
+		auto drawSegment = [&](float x1, float y1, float x2, float y2)
+			{
+				bool intersect = IsSegmentIntersectCircle(x1, y1, x2, y2, cx, cy, radius);
+				if (intersect)
+					glColor4f(highlightColor[0], highlightColor[1], highlightColor[2], alpha);
+				else
+					glColor4f(defaultColor[0], defaultColor[1], defaultColor[2], alpha);
+
+				glVertex2f(x1, y1);
+				glVertex2f(x2, y2);
+			};
+
+		for (int i = 0; i < segmentsPerSide; ++i)
+		{
+			float t0 = (float)i / segmentsPerSide;
+			float t1 = (float)(i + 1) / segmentsPerSide;
+			float x0 = x + w * t0;
+			float y0 = y;
+			float x1 = x + w * t1;
+			float y1 = y;
+			drawSegment(x0, y0, x1, y1);
+		}
+
+		for (int i = 0; i < segmentsPerSide; ++i)
+		{
+			float t0 = (float)i / segmentsPerSide;
+			float t1 = (float)(i + 1) / segmentsPerSide;
+			float x0 = x + w * t0;
+			float y0 = y + h;
+			float x1 = x + w * t1;
+			float y1 = y + h;
+			drawSegment(x0, y0, x1, y1);
+		}
+
+		for (int i = 0; i < segmentsPerSide; ++i)
+		{
+			float t0 = (float)i / segmentsPerSide;
+			float t1 = (float)(i + 1) / segmentsPerSide;
+			float x0 = x;
+			float y0 = y + h * t0;
+			float x1 = x;
+			float y1 = y + h * t1;
+			drawSegment(x0, y0, x1, y1);
+		}
+
+		for (int i = 0; i < segmentsPerSide; ++i)
+		{
+			float t0 = (float)i / segmentsPerSide;
+			float t1 = (float)(i + 1) / segmentsPerSide;
+			float x0 = x + w;
+			float y0 = y + h * t0;
+			float x1 = x + w;
+			float y1 = y + h * t1;
+			drawSegment(x0, y0, x1, y1);
+		}
+
+		glEnd();
 	}
 
 	void uiWindow::DrawContent()
@@ -115,6 +196,9 @@ namespace PulseStudio
 			glVertex2f(m_RectX, m_RectY + m_RectHeight + offset);
 			glEnd();
 		}
+
+		int segmentsPerSide = std::max(70, (int)(std::max(m_RectWidth, m_RectHeight) / 5.0f));
+		DrawHighlightedRectBorder(m_RectX, m_RectY, m_RectWidth, m_RectHeight, segmentsPerSide);
 
 		int scissorX = (int)m_RectX;
 		int scissorY = (int)(height - (m_RectY + m_RectHeight));
@@ -189,6 +273,41 @@ namespace PulseStudio
 		glPopAttrib();
 	}
 
+	ResizeEdge uiWindow::GetResizeEdge(float mx, float my) const
+	{
+		const int edge = m_EdgeSize;
+		const float left = m_RectX;
+		const float right = m_RectX + m_RectWidth;
+		const float top = m_RectY;
+		const float bottom = m_RectY + m_RectHeight;
+
+		bool onLeft = (mx >= left && mx <= left + edge);
+		bool onRight = (mx >= right - edge && mx <= right);
+		bool onTop = (my >= top && my <= top + edge);
+		bool onBottom = (my >= bottom - edge && my <= bottom);
+
+		if (onLeft && onTop)    return ResizeEdge::TopLeft;
+		if (onLeft && onBottom) return ResizeEdge::BottomLeft;
+		if (onRight && onTop)   return ResizeEdge::TopRight;
+		if (onRight && onBottom)return ResizeEdge::BottomRight;
+
+		const float yRangeLow = top - edge;
+		const float yRangeHigh = bottom + edge;
+		const float xRangeLow = left - edge;
+		const float xRangeHigh = right + edge;
+
+		if (onLeft && my >= yRangeLow && my <= yRangeHigh)
+			return ResizeEdge::Left;
+		if (onRight && my >= yRangeLow && my <= yRangeHigh)
+			return ResizeEdge::Right;
+		if (onTop && mx >= xRangeLow && mx <= xRangeHigh)
+			return ResizeEdge::Top;
+		if (onBottom && mx >= xRangeLow && mx <= xRangeHigh)
+			return ResizeEdge::Bottom;
+
+		return ResizeEdge::None;
+	}
+
 	bool uiWindow::OnEvent(Event &event)
 	{
 		if (!m_IsVisible)
@@ -258,7 +377,8 @@ namespace PulseStudio
 				return true;
 			}
 
-			return false; });
+			return false;
+			});
 
 		dispatcher.Dispatch<MouseMovedEvent>([this](MouseMovedEvent &e)
 			{
@@ -269,6 +389,7 @@ namespace PulseStudio
 				float closeY = m_RectY + (30.0f - m_CloseButtonSize) / 2;
 				bool inClose = (e.GetX() >= closeX && e.GetX() <= closeX + m_CloseButtonSize &&
 					e.GetY() >= closeY && e.GetY() <= closeY + m_CloseButtonSize);
+
 				if (inClose != m_CloseButtonHovered)
 				{
 					m_CloseButtonHovered = inClose;
@@ -375,7 +496,8 @@ namespace PulseStudio
 				ResizeEdge edge = GetResizeEdge(mx, my);
 				UpdateResizeCursor(edge);
 
-				return false; });
+				return false;
+				});
 
 		dispatcher.Dispatch<MouseButtonReleasedEvent>([this](MouseButtonReleasedEvent &e)
 		{
@@ -457,43 +579,10 @@ namespace PulseStudio
 			glfwSetCursor(glfwWindow, glfwCreateStandardCursor(GLFW_ARROW_CURSOR));
 	}
 
-	ResizeEdge uiWindow::GetResizeEdge(float mx, float my) const
-	{
-		const int edge = m_EdgeSize;
-		const float left = m_RectX;
-		const float right = m_RectX + m_RectWidth;
-		const float top = m_RectY;
-		const float bottom = m_RectY + m_RectHeight;
-
-		bool onLeft = (mx >= left && mx <= left + edge);
-		bool onRight = (mx >= right - edge && mx <= right);
-		bool onTop = (my >= top && my <= top + edge);
-		bool onBottom = (my >= bottom - edge && my <= bottom);
-
-		if (onLeft && onTop)
-			return ResizeEdge::TopLeft;
-		if (onLeft && onBottom)
-			return ResizeEdge::BottomLeft;
-		if (onRight && onTop)
-			return ResizeEdge::TopRight;
-		if (onRight && onBottom)
-			return ResizeEdge::BottomRight;
-		if (onLeft)
-			return ResizeEdge::Left;
-		if (onRight)
-			return ResizeEdge::Right;
-		if (onTop)
-			return ResizeEdge::Top;
-		if (onBottom)
-			return ResizeEdge::Bottom;
-
-		return ResizeEdge::None;
-	}
-
 	void uiWindow::UpdateResizeCursor(ResizeEdge edge)
 	{
-		GLFWwindow *glfwWin = static_cast<GLFWwindow *>(Application::Get().GetWindow().GetNativeWindow());
-		GLFWcursor *cursor = nullptr;
+		GLFWwindow* glfwWin = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
+		GLFWcursor* cursor = nullptr;
 
 		switch (edge)
 		{

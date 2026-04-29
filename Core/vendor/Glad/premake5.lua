@@ -4,8 +4,8 @@ project "Glad"
 	staticruntime "off"
 	warnings "off"
 
-    targetdir ("%{wks.location}/Binaries/" .. OutputDir .. "/%{prj.name}")
-    objdir ("%{wks.location}/Binaries-Intermediates/" .. OutputDir .. "/%{prj.name}")
+    targetdir ("%{wks.location}/Binaries/" .. OutputDir)
+    objdir ("%{wks.location}/Binaries-Intermediates/" .. OutputDir)
 
 	files
 	{

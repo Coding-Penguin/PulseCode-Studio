@@ -6,8 +6,11 @@ namespace PulseStudio {
 
     class uiWindow;
     class uiMenuBar;
+	class uiButton;
+	class MouseCircle;
 
-    class uiLayer : public Layer {
+    class uiLayer : public Layer
+    {
     public:
         uiLayer();
         virtual ~uiLayer();

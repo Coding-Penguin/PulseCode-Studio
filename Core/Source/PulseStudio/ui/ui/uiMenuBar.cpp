@@ -4,6 +4,10 @@
 #include "uiButton.h"
 #include "PulseStudio/Application.h"
 #include "PulseStudio/Events/Event.h"
+#ifdef PS_PLATFORM_WINDOWS
+#define GLFW_EXPOSE_NATIVE_WIN32
+#endif
+#include <GLFW/glfw3native.h>
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
 
@@ -76,20 +80,46 @@ namespace PulseStudio
 				return true;
 		}
 
+		MouseMovedEvent& e = (MouseMovedEvent&)event;
+		float mx = e.GetX(), my = e.GetY();
+
 		if (event.GetEventType() == EventType::MouseMoved)
 		{
-			MouseMovedEvent& e = (MouseMovedEvent&)event;
-			float mx = e.GetX(), my = e.GetY();
+			if (m_DraggingMainWindow)
+			{
+				float dx = mx - m_DragStartX;
+				float dy = my - m_DragStartY;
+
+				m_AccumulatedDragX += dx;
+				m_AccumulatedDragY += dy;
+
+				if (std::abs(m_AccumulatedDragX) >= 1.0f || std::abs(m_AccumulatedDragY) >= 1.0f)
+				{
+					int newX = m_WindowStartX + (int)(m_AccumulatedDragX);
+					int newY = m_WindowStartY + (int)(m_AccumulatedDragY);
+					auto* window = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
+					glfwSetWindowPos(window, newX, newY);
+
+					m_WindowStartX = newX;
+					m_WindowStartY = newY;
+					m_AccumulatedDragX -= (int)m_AccumulatedDragX;
+					m_AccumulatedDragY -= (int)m_AccumulatedDragY;
+				}
+
+				m_DragStartX = mx;
+				m_DragStartY = my;
+				return true;
+			}
 
 			auto updateHover = [&](ButtonRect& rect, bool& hover)
-			{
-				hover = (mx >= rect.x && mx <= rect.x + rect.w && my >= rect.y && my <= rect.y + rect.h);
-			};
+				{
+					hover = (mx >= rect.x && mx <= rect.x + rect.w && my >= rect.y && my <= rect.y + rect.h);
+				};
 			updateHover(m_MinimizeRect, m_MinimizeHovered);
 			updateHover(m_MaximizeRect, m_MaximizeHovered);
 			updateHover(m_CloseRect, m_CloseHovered);
 			return false;
-		}
+			}
 		else if (event.GetEventType() == EventType::MouseButtonPressed)
 		{
 			MouseButtonPressedEvent& e = (MouseButtonPressedEvent&)event;
@@ -123,7 +153,54 @@ namespace PulseStudio
 				PS_CORE_INFO("Close button clicked!");
 				return true;
 			}
+
+			if (my < 30)
+			{
+				bool hitButton = false;
+
+				for (auto& btn : m_Buttons)
+				{
+					float bx = btn->GetX(), by = btn->GetY(), bw = btn->GetWidth(), bh = btn->GetHeight();
+					if (mx >= bx && mx <= bx + bw && my >= by && my <= by + bh)
+					{
+						hitButton = true;
+						break;
+					}
+				}
+
+				if (!hitButton && ((mx >= m_MinimizeRect.x && mx <= m_MinimizeRect.x + m_MinimizeRect.w &&
+					my >= m_MinimizeRect.y && my <= m_MinimizeRect.y + m_MinimizeRect.h) ||
+					(mx >= m_MaximizeRect.x && mx <= m_MaximizeRect.x + m_MaximizeRect.w &&
+						my >= m_MaximizeRect.y && my <= m_MaximizeRect.y + m_MaximizeRect.h) ||
+					(mx >= m_CloseRect.x && mx <= m_CloseRect.x + m_CloseRect.w &&
+						my >= m_CloseRect.y && my <= m_CloseRect.y + m_CloseRect.h)))
+				{
+					hitButton = true;
+				}
+
+				if (!hitButton)
+				{
+					auto* window = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
+					glfwGetWindowPos(window, &m_WindowStartX, &m_WindowStartY);
+					m_DragStartX = mx;
+					m_DragStartY = my;
+					m_DraggingMainWindow = true;
+					return true;
+				}
+			}
 		}
+		else if (event.GetEventType() == EventType::MouseButtonReleased)
+		{
+			MouseButtonReleasedEvent& e = (MouseButtonReleasedEvent&)event;
+			if (e.GetMouseButton() != GLFW_MOUSE_BUTTON_LEFT) return false;
+			if (m_DraggingMainWindow)
+			{
+				m_DraggingMainWindow = false;
+				return true;
+			}
+			return false;
+		}
+
 		return false;
 	}
 

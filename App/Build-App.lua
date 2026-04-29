@@ -16,13 +16,14 @@ project "App"
         "../Core/vendor/glm",
         "../Core/vendor/stb_image",
         "../Core/vendor/miniaudio",
-        "../Core/vendor/spdlog/include"
+        "../Core/vendor/spdlog/include",
+        "../Core/vendor/json/include"
    }
 
    links { "Core" }
 
-   targetdir ("../Binaries/" .. OutputDir .. "/%{prj.name}")
-   objdir ("../Binaries-Intermediates/" .. OutputDir .. "/%{prj.name}")
+   targetdir ("../Binaries/" .. OutputDir)
+   objdir ("../Binaries-Intermediates/" .. OutputDir)
 
    filter "system:windows"
        systemversion "latest"

@@ -26,153 +26,153 @@ namespace PulseStudio {
 	Application* Application::s_Instance = nullptr;
 
 	Application::Application()
-    {
+	{
 		PS_CORE_ASSERT(!s_Instance, "Application already exists!");
 		s_Instance = this;
 
 		Log::Init();
-        PS_CORE_INFO("Initilized log!");
+		PS_CORE_INFO("Initilized log!");
 
-        ThemeManager::SetTheme(Theme::Dark);
+		ThemeManager::SetTheme(Theme::Dark);
 
-        WindowProps props("Pulse-Studio Integrated Development Environment", 1720, 1000);
-        m_MainWindow = std::unique_ptr<Window>(Window::Create(props));
+		WindowProps props("Pulse-Studio Integrated Development Environment", 1720, 1000);
+		m_MainWindow = std::unique_ptr<Window>(Window::Create(props));
 		m_MainWindow->SetEventCallback(BIND_EVENT_FN(OnEvent));
 
-        Input::Init();
-    }
-
-    Application::~Application()
-    {
-        PS_INFO("Application destructor called.");
-		PS_CORE_WARN("Shutting down Pulse Studio...");
-    }
-
-    void Application::PushLayer(Layer* layer)
-    {
-        m_LayerStack.PushLayer(layer);
-        layer->OnAttach();
+		Input::Init();
 	}
 
-    void Application::PushOverlay(Layer* overlay)
-    {
-        m_LayerStack.PushOverlay(overlay);
+	Application::~Application()
+	{
+		PS_INFO("Application destructor called.");
+		PS_CORE_WARN("Shutting down Pulse Studio...");
+	}
+
+	void Application::PushLayer(Layer* layer)
+	{
+		m_LayerStack.PushLayer(layer);
+		layer->OnAttach();
+	}
+
+	void Application::PushOverlay(Layer* overlay)
+	{
+		m_LayerStack.PushOverlay(overlay);
 		overlay->OnAttach();
 	}
 
-    void Application::OnEvent(Event& e)
-    {
+	void Application::OnEvent(Event& e)
+	{
 		PS_CORE_TRACE(e.ToString());
-        EventDispatcher dispatcher(e);
-        dispatcher.Dispatch<WindowCloseEvent>(std::bind(&Application::OnWindowClose, this, std::placeholders::_1));
-        for (auto it = m_LayerStack.end(); it != m_LayerStack.begin(); )
-        {
-            (*--it)->OnEvent(e);
-            if (e.m_Handled)
-                break;
-        }
+		EventDispatcher dispatcher(e);
+		dispatcher.Dispatch<WindowCloseEvent>(std::bind(&Application::OnWindowClose, this, std::placeholders::_1));
+		for (auto it = m_LayerStack.end(); it != m_LayerStack.begin(); )
+		{
+			(*--it)->OnEvent(e);
+			if (e.m_Handled)
+				break;
+		}
 	}
 	
 	static bool SetGLFWColor()
 	{
-        if (ThemeManager::GetCurrentTheme() == Theme::Dark)
-        {
-            glClearColor(0.01f, 0.01f, 0.07f, 1);
-            glClear(GL_COLOR_BUFFER_BIT);
-            return true;
-        }
-        else if (ThemeManager::GetCurrentTheme() == Theme::Light)
-        {
-            glClearColor(0.95f, 0.95f, 1.0f, 1);
-            glClear(GL_COLOR_BUFFER_BIT);
-            return true;
-        }
-        else if (ThemeManager::GetCurrentTheme() == Theme::Cool_Breeze)
-        {
-            glClearColor(0.8f, 0.9f, 0.95f, 1);
-            glClear(GL_COLOR_BUFFER_BIT);
-            return true;
-        }
-        else if (ThemeManager::GetCurrentTheme() == Theme::Cool_Slate)
-        {
-            glClearColor(0.110f, 0.208f, 0.306f, 1);
-            glClear(GL_COLOR_BUFFER_BIT);
-            return true;
-        }
-        else if (ThemeManager::GetCurrentTheme() == Theme::Icy_Mint)
-        {
-            glClearColor(0.8f, 0.9f, 0.85f, 1);
-            glClear(GL_COLOR_BUFFER_BIT);
-            return true;
-        }
-        else if (ThemeManager::GetCurrentTheme() == Theme::Moonlight)
-        {
-            glClearColor(0.1f, 0.15f, 0.27f, 1);
-            glClear(GL_COLOR_BUFFER_BIT);
-            return true;
-        }
-        else if (ThemeManager::GetCurrentTheme() == Theme::Forest)
-        {
-            glClearColor(0.07f, 0.2f, 0.1f, 1);
-            glClear(GL_COLOR_BUFFER_BIT);
-            return true;
-        }
-        else if (ThemeManager::GetCurrentTheme() == Theme::Sand)
-        {
+		if (ThemeManager::GetCurrentTheme() == Theme::Dark)
+		{
+			glClearColor(0.01f, 0.01f, 0.07f, 1);
+			glClear(GL_COLOR_BUFFER_BIT);
+			return true;
+		}
+		else if (ThemeManager::GetCurrentTheme() == Theme::Light)
+		{
+			glClearColor(0.95f, 0.95f, 1.0f, 1);
+			glClear(GL_COLOR_BUFFER_BIT);
+			return true;
+		}
+		else if (ThemeManager::GetCurrentTheme() == Theme::Cool_Breeze)
+		{
+			glClearColor(0.8f, 0.9f, 0.95f, 1);
+			glClear(GL_COLOR_BUFFER_BIT);
+			return true;
+		}
+		else if (ThemeManager::GetCurrentTheme() == Theme::Cool_Slate)
+		{
+			glClearColor(0.110f, 0.208f, 0.306f, 1);
+			glClear(GL_COLOR_BUFFER_BIT);
+			return true;
+		}
+		else if (ThemeManager::GetCurrentTheme() == Theme::Icy_Mint)
+		{
+			glClearColor(0.8f, 0.9f, 0.85f, 1);
+			glClear(GL_COLOR_BUFFER_BIT);
+			return true;
+		}
+		else if (ThemeManager::GetCurrentTheme() == Theme::Moonlight)
+		{
+			glClearColor(0.1f, 0.15f, 0.27f, 1);
+			glClear(GL_COLOR_BUFFER_BIT);
+			return true;
+		}
+		else if (ThemeManager::GetCurrentTheme() == Theme::Forest)
+		{
+			glClearColor(0.07f, 0.2f, 0.1f, 1);
+			glClear(GL_COLOR_BUFFER_BIT);
+			return true;
+		}
+		else if (ThemeManager::GetCurrentTheme() == Theme::Sand)
+		{
 			glClearColor(0.95f, 0.9f, 0.7f, 1);
 			glClear(GL_COLOR_BUFFER_BIT);
-            return true;
-        }
-        else if (ThemeManager::GetCurrentTheme() == Theme::Ice)
-        {
+			return true;
+		}
+		else if (ThemeManager::GetCurrentTheme() == Theme::Ice)
+		{
 			glClearColor(0.85f, 0.85f, 0.9f, 1);
 			glClear(GL_COLOR_BUFFER_BIT);
-            return true;
+			return true;
 		}
-        else if (ThemeManager::GetCurrentTheme() == Theme::Grape)
-        {
+		else if (ThemeManager::GetCurrentTheme() == Theme::Grape)
+		{
 			glClearColor(0.2f, 0.0f, 0.3f, 1);
 			glClear(GL_COLOR_BUFFER_BIT);
-            return true;
+			return true;
 		}
-        else
-        {
-            PS_ERROR("Unknow this theme!");
-            return false;
-        }
+		else
+		{
+			PS_ERROR("Unknow this theme!");
+			return false;
+		}
 	}
 
-    void Application::Run()
-    {
-        PS_TRACE("Pulse Studio initialized and running.");
-        PS_DEBUG("Hello from Pulse-Studio!");
+	void Application::Run()
+	{
+		PS_TRACE("Pulse Studio initialized and running.");
+		PS_DEBUG("Hello from Pulse-Studio!");
 
-        do 
-        {
+		do 
+		{
 			SetGLFWColor();
 
-            for (Layer* layer : m_LayerStack)
-                if (layer)
-                    layer->OnUpdate(0.0f);
+			for (Layer* layer : m_LayerStack)
+				if (layer)
+					layer->OnUpdate(0.0f);
 
-            if (m_MainWindow)
-            {
-                m_MainWindow->SetUnsemi_transparency(unsemi_transparency);
-                m_MainWindow->OnUpdate();
-            }
-            else
-            {
-                PS_CORE_ERROR("Main window is null!");
-                m_Running = false;
-            }
-        } while (m_Running && !glfwWindowShouldClose(static_cast<GLFWwindow*>(m_MainWindow->GetNativeWindow())));
-    }
+			if (m_MainWindow)
+			{
+				m_MainWindow->SetUnsemi_transparency(unsemi_transparency);
+				m_MainWindow->OnUpdate();
+			}
+			else
+			{
+				PS_CORE_ERROR("Main window is null!");
+				m_Running = false;
+			}
+		} while (m_Running && !glfwWindowShouldClose(static_cast<GLFWwindow*>(m_MainWindow->GetNativeWindow())));
+	}
 
-    bool Application::OnWindowClose(WindowCloseEvent& e) 
-    {
+	bool Application::OnWindowClose(WindowCloseEvent& e) 
+	{
 		PS_WARN("Window close event received. Shutting down Application...");
-        m_Running = false;
-        return true;
-    }
+		m_Running = false;
+		return true;
+	}
 
 }
