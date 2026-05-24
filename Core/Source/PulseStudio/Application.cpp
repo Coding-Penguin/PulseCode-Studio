@@ -5,7 +5,7 @@
 #include "Events/ApplicationEvent.h"
 #include "Log.h"
 #include "Window.h"
-#include "ui/ui/uiWindow.h"
+#include "ui/uiTools/uiWindow.h"
 
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
@@ -13,7 +13,7 @@
 
 #ifdef PS_PLATFORM_WINDOWS
 #include "Platform/Windows/WindowsWindow.h"
-#else define PS_PLATFORM_LINUX
+#else define(PS_PLATFORM_LINUX)
 #include "Platform/Linux/LinuxWindow.h"
 #endif
 
@@ -33,17 +33,27 @@ namespace PulseStudio {
 		Log::Init();
 		PS_CORE_INFO("Initilized log!");
 
-		ThemeManager::SetTheme(Theme::Dark);
+		ThemeManager::SetTheme(Theme::Cool_Slate);
 
 		WindowProps props("Pulse-Studio Integrated Development Environment", 1720, 1000);
 		m_MainWindow = std::unique_ptr<Window>(Window::Create(props));
 		m_MainWindow->SetEventCallback(BIND_EVENT_FN(OnEvent));
 
 		Input::Init();
+
+		if (!isFontLoaded())
+		{
+			PS_CORE_INFO("Loading font...");
+			TextRenderer::Get().LoadFont("H:/Projects/CppProject/Pulse-Studio/Core/Resources/Fonts/Ubuntu-L.ttf", 24.0f);
+			SetFontLoaded(true);
+			PS_CORE_INFO("Font loaded successfully.");
+		}
 	}
 
 	Application::~Application()
 	{
+		TextRenderer::Get().Unload();
+
 		PS_INFO("Application destructor called.");
 		PS_CORE_WARN("Shutting down Pulse Studio...");
 	}
@@ -77,7 +87,7 @@ namespace PulseStudio {
 	{
 		if (ThemeManager::GetCurrentTheme() == Theme::Dark)
 		{
-			glClearColor(0.01f, 0.01f, 0.07f, 1);
+			glClearColor(0.01f, 0.01f, 0.05f, 1);
 			glClear(GL_COLOR_BUFFER_BIT);
 			return true;
 		}

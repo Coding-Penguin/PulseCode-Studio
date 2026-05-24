@@ -2,6 +2,7 @@
 
 #include "Window.h"
 #include "Platform/Windows/WindowsWindow.h"
+#include "Platform/Linux/LinuxWindow.h"
 
 #include "Log.h"
 

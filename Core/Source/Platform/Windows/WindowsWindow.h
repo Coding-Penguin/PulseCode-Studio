@@ -31,6 +31,8 @@ namespace PulseStudio {
 		inline virtual void* GetNativeWindow() const override;
 
 		void SetUnsemi_transparency(double value) override;
+
+		void SetWindowIcon(GLFWwindow* window, const std::string& iconPath) override;
 	private:
 		GLFWwindow* m_Window;
 

@@ -17,7 +17,8 @@ project "App"
         "../Core/vendor/stb_image",
         "../Core/vendor/miniaudio",
         "../Core/vendor/spdlog/include",
-        "../Core/vendor/json/include"
+        "../Core/vendor/json/include",
+        "../Core/vendor"
    }
 
    links { "Core" }

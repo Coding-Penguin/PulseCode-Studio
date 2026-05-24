@@ -15,350 +15,385 @@
 #include "PulseStudio/Events/KeyEvent.h"
 #include "PulseStudio/Events/MouseEvent.h"
 
+#include "PulseStudio/ui/uiLayer.h"
+
+#include <stb_image.h>
+
+#include "PulseStudio/Channel.h"
+
 namespace PulseStudio {
 
-    static bool s_GLFWInitialized = false;
+	static bool s_GLFWInitialized = false;
 
-    static void GLFWErrorCallback(int error, const char* description)
-    {
-        PS_CORE_ERROR(std::format("GLFW Error ({0}): {1}", error, description));
-    }
+	static void GLFWErrorCallback(int error, const char* description)
+	{
+		PS_CORE_ERROR(std::format("GLFW Error ({0}): {1}", error, description));
+	}
 
-    WindowsWindow::WindowsWindow(const WindowProps& props)
-    {
-        Init(props);
-    }
-    
-    void WindowsWindow::Init(const WindowProps& props)
-    {
-        m_Data.Title = props.Title;
-        m_Data.Width = props.Width;
-        m_Data.Height = props.Height;
+	WindowsWindow::WindowsWindow(const WindowProps& props)
+	{
+		Init(props);
+	}
+	
+	void WindowsWindow::Init(const WindowProps& props)
+	{
+		m_Data.Title = props.Title;
+		m_Data.Width = props.Width;
+		m_Data.Height = props.Height;
 
-        m_Data.WindowPtr = this;
+		m_Data.WindowPtr = this;
 
-        m_CursorArrow = glfwCreateStandardCursor(GLFW_ARROW_CURSOR);
-        m_CursorHResize = glfwCreateStandardCursor(GLFW_HRESIZE_CURSOR);
-        m_CursorVResize = glfwCreateStandardCursor(GLFW_VRESIZE_CURSOR);
-        m_CursorNWSE = glfwCreateStandardCursor(GLFW_RESIZE_NWSE_CURSOR);
-        m_CursorNESW = glfwCreateStandardCursor(GLFW_RESIZE_NESW_CURSOR);
+		m_CursorArrow = glfwCreateStandardCursor(GLFW_ARROW_CURSOR);
+		m_CursorHResize = glfwCreateStandardCursor(GLFW_HRESIZE_CURSOR);
+		m_CursorVResize = glfwCreateStandardCursor(GLFW_VRESIZE_CURSOR);
+		m_CursorNWSE = glfwCreateStandardCursor(GLFW_RESIZE_NWSE_CURSOR);
+		m_CursorNESW = glfwCreateStandardCursor(GLFW_RESIZE_NESW_CURSOR);
 
-        PS_CORE_INFO(std::format("Creating window {0} ({1}, {2})", props.Title, props.Width, props.Height));
+		PS_CORE_INFO(std::format("Creating window {0} ({1}, {2})", props.Title, props.Width, props.Height));
 
-        if (!s_GLFWInitialized)
-        {
-            int success = glfwInit();
-            PS_CORE_ASSERT(success, "Could not initialize GLFW!");
-            glfwSetErrorCallback(GLFWErrorCallback);
-            s_GLFWInitialized = true;
-        }
+		if (!s_GLFWInitialized)
+		{
+			int success = glfwInit();
+			PS_CORE_ASSERT(success, "Could not initialize GLFW!");
+			glfwSetErrorCallback(GLFWErrorCallback);
+			s_GLFWInitialized = true;
+		}
 
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
-        glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
+		if (ChannelManager::GetChannel() == Channel::Preview)
+			glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
 
-        m_Window = glfwCreateWindow((int)props.Width, (int)props.Height, m_Data.Title.c_str(), nullptr, nullptr);
-        glfwMakeContextCurrent(m_Window);
-        int status = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
-        PS_CORE_ASSERT(status, "Could not initialize Glad!");
-        glfwSetWindowUserPointer(m_Window, &m_Data);
-        SetVSync(true);
+		m_Window = glfwCreateWindow((int)props.Width, (int)props.Height, m_Data.Title.c_str(), nullptr, nullptr);
+		glfwMakeContextCurrent(m_Window);
+		int status = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
+		PS_CORE_ASSERT(status, "Could not initialize Glad!");
+		glfwSetWindowUserPointer(m_Window, &m_Data);
+		SetVSync(true);
 
-        // Set GLFW callbacks
-        glfwSetWindowSizeCallback(m_Window, [](GLFWwindow* window, int width, int height)
-            {
-                WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+		SetWindowIcon(m_Window, "H:/Projects/CppProject/Pulse-Studio/Core/Resources/Images/logo.contrast-white_scale-400.png");
 
-                data.Width = width;
-                data.Height = height;
+		// Set GLFW callbacks
+		glfwSetWindowSizeCallback(m_Window, [](GLFWwindow* window, int width, int height)
+			{
+				WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 
-                WindowResizeEvent event(width, height);
-                if (data.EventCallback)
-                    data.EventCallback(event);
-            });
+				data.Width = width;
+				data.Height = height;
 
-        glfwSetWindowCloseCallback(m_Window, [](GLFWwindow* window)
-            {
-                WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+				WindowResizeEvent event(width, height);
+				if (data.EventCallback)
+					data.EventCallback(event);
+			});
 
-                WindowCloseEvent event;
-                if (data.EventCallback)
-                    data.EventCallback(event);
-            });
+		glfwSetWindowCloseCallback(m_Window, [](GLFWwindow* window)
+			{
+				WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 
-        glfwSetKeyCallback(m_Window, [](GLFWwindow* window, int key, int scancode, int action, int mods)
-            {
-                WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+				WindowCloseEvent event;
+				if (data.EventCallback)
+					data.EventCallback(event);
+			});
 
-                switch (action)
-                {
-                case GLFW_PRESS:
-                {
-                    KeyPressedEvent event(key, 0);
-                    if (data.EventCallback)
-                        data.EventCallback(event);
-                    break;
-                }
-                case GLFW_RELEASE:
-                {
-                    KeyReleasedEvent event(key);
-                    if (data.EventCallback)
-                        data.EventCallback(event);
-                    break;
-                }
-                case GLFW_REPEAT:
-                {
-                    KeyPressedEvent event(key, 1);
-                    if (data.EventCallback)
-                        data.EventCallback(event);
-                    break;
-                }
-                }
-            });
+		glfwSetKeyCallback(m_Window, [](GLFWwindow* window, int key, int scancode, int action, int mods)
+			{
+				WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 
-        glfwSetMouseButtonCallback(m_Window, [](GLFWwindow* window, int button, int action, int mods)
-            {
-                WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
-                WindowsWindow* self = (WindowsWindow*)data.WindowPtr;
-                double xpos, ypos;
-                glfwGetCursorPos(window, &xpos, &ypos);
+				switch (action)
+				{
+				case GLFW_PRESS:
+				{
+					KeyPressedEvent event(key, 0);
+					if (data.EventCallback)
+						data.EventCallback(event);
+					break;
+				}
+				case GLFW_RELEASE:
+				{
+					KeyReleasedEvent event(key);
+					if (data.EventCallback)
+						data.EventCallback(event);
+					break;
+				}
+				case GLFW_REPEAT:
+				{
+					KeyPressedEvent event(key, 1);
+					if (data.EventCallback)
+						data.EventCallback(event);
+					break;
+				}
+				}
+			});
 
-                if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
-                {
-                    int edge = self->GetResizeEdge((float)xpos, (float)ypos);
-                    if (edge != 0)
-                    {
-                        self->StartResizeWindow(edge, (int)xpos, (int)ypos);
-                        return;
-                    }
-                }
-                else if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE)
-                {
-                    if (self->m_IsResizingWindow)
-                    {
-                        self->StopResizeWindow();
-                        return;
-                    }
-                }
+		glfwSetMouseButtonCallback(m_Window, [](GLFWwindow* window, int button, int action, int mods)
+			{
+				WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+				WindowsWindow* self = (WindowsWindow*)data.WindowPtr;
+				double xpos, ypos;
+				glfwGetCursorPos(window, &xpos, &ypos);
 
-                switch (action)
-                {
-                case GLFW_PRESS:
-                {
-                    MouseButtonPressedEvent event(button, xpos, ypos);
-                    if (data.EventCallback)
-                        data.EventCallback(event);
-                    break;
-                }
-                case GLFW_RELEASE:
-                {
-                    MouseButtonReleasedEvent event(button, xpos, ypos);
-                    if (data.EventCallback)
-                        data.EventCallback(event);
-                    break;
-                }
-                }
-            });
+				if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+				{
+					int edge = self->GetResizeEdge((float)xpos, (float)ypos);
+					if (edge != 0)
+					{
+						self->StartResizeWindow(edge, (int)xpos, (int)ypos);
+						return;
+					}
+				}
+				else if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE)
+				{
+					if (self->m_IsResizingWindow)
+					{
+						self->StopResizeWindow();
+						return;
+					}
+				}
 
-        glfwSetScrollCallback(m_Window, [](GLFWwindow* window, double xOffset, double yOffset)
-            {
-                WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+				switch (action)
+				{
+				case GLFW_PRESS:
+				{
+					MouseButtonPressedEvent event(button, xpos, ypos);
+					if (data.EventCallback)
+						data.EventCallback(event);
+					break;
+				}
+				case GLFW_RELEASE:
+				{
+					MouseButtonReleasedEvent event(button, xpos, ypos);
+					if (data.EventCallback)
+						data.EventCallback(event);
+					break;
+				}
+				}
+			});
 
-                MouseScrolledEvent event((float)xOffset, (float)yOffset);
-                if (data.EventCallback)
-                    data.EventCallback(event);
-            });
+		glfwSetScrollCallback(m_Window, [](GLFWwindow* window, double xOffset, double yOffset)
+			{
+				WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 
-        glfwSetCursorPosCallback(m_Window, [](GLFWwindow* window, double xPos, double yPos)
-            {
-                WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+				MouseScrolledEvent event((float)xOffset, (float)yOffset);
+				if (data.EventCallback)
+					data.EventCallback(event);
+			});
 
-                WindowsWindow* self = (WindowsWindow*)data.WindowPtr;
-                if (self->m_IsResizingWindow)
-                {
-                    self->DoResizeWindow((int)xPos, (int)yPos);
-                }
-                else 
-                {
-                    int edge = self->GetResizeEdge((float)xPos, (float)yPos);
-                    self->UpdateResizeCursor(edge);
-                }
+		glfwSetCursorPosCallback(m_Window, [](GLFWwindow* window, double xPos, double yPos)
+			{
+				WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 
-                MouseMovedEvent event((float)xPos, (float)yPos);
-                if (data.EventCallback)
-                    data.EventCallback(event);
-            });
-    }
+				WindowsWindow* self = (WindowsWindow*)data.WindowPtr;
+				if (self->m_IsResizingWindow)
+				{
+					self->DoResizeWindow((int)xPos, (int)yPos);
+				}
+				else 
+				{
+					int edge = self->GetResizeEdge((float)xPos, (float)yPos);
+					self->UpdateResizeCursor(edge);
+				}
 
-    void WindowsWindow::OnUpdate()
-    {
-        glfwPollEvents();
-        glfwSwapBuffers(m_Window);
-    }
+				int edge = self->GetResizeEdge((float)xPos, (float)yPos);
+				self->UpdateResizeCursor(edge);
 
-    WindowsWindow::~WindowsWindow()
-    {
-        glfwDestroyCursor(m_CursorArrow);
-        glfwDestroyCursor(m_CursorHResize);
+				MouseMovedEvent event((float)xPos, (float)yPos);
+				if (data.EventCallback)
+					data.EventCallback(event);
+			});
+	}
+
+	void WindowsWindow::OnUpdate()
+	{
+		glfwPollEvents();
+		glfwSwapBuffers(m_Window);
+	}
+
+	WindowsWindow::~WindowsWindow()
+	{
+		glfwDestroyCursor(m_CursorArrow);
+		glfwDestroyCursor(m_CursorHResize);
 		glfwDestroyCursor(m_CursorVResize);
-        glfwDestroyCursor(m_CursorNWSE);
-        glfwDestroyCursor(m_CursorNESW);
+		glfwDestroyCursor(m_CursorNWSE);
+		glfwDestroyCursor(m_CursorNESW);
 
-        glfwDestroyWindow(m_Window);
-        glfwTerminate();
-    }
+		glfwDestroyWindow(m_Window);
+		glfwTerminate();
+	}
 
-    unsigned int WindowsWindow::GetWidth() const
-    {
-        return m_Data.Width;
-    }
+	unsigned int WindowsWindow::GetWidth() const
+	{
+		return m_Data.Width;
+	}
 
-    unsigned int WindowsWindow::GetHeight() const
-    {
-        return m_Data.Height;
-    }
+	unsigned int WindowsWindow::GetHeight() const
+	{
+		return m_Data.Height;
+	}
 
-    void WindowsWindow::SetEventCallback(const EventCallbackFn& callback)
-    {
-        m_Data.EventCallback = callback;
-    }
+	void WindowsWindow::SetEventCallback(const EventCallbackFn& callback)
+	{
+		m_Data.EventCallback = callback;
+	}
 
-    void WindowsWindow::SetVSync(bool enabled)
-    {
-        m_Data.VSync = enabled;
-        glfwSwapInterval(enabled ? 1 : 0);
-    }
+	void WindowsWindow::SetVSync(bool enabled)
+	{
+		m_Data.VSync = enabled;
+		glfwSwapInterval(enabled ? 1 : 0);
+	}
 
-    bool WindowsWindow::IsVSync() const
-    {
-        return m_Data.VSync;
-    }
+	bool WindowsWindow::IsVSync() const
+	{
+		return m_Data.VSync;
+	}
 
-    void* WindowsWindow::GetNativeWindow() const
-    {
-        return m_Window;
-    }
+	void* WindowsWindow::GetNativeWindow() const
+	{
+		return m_Window;
+	}
 
-    void WindowsWindow::SetUnsemi_transparency(double value)
-    {
+	void WindowsWindow::SetUnsemi_transparency(double value)
+	{
 #ifdef PS_PLATFORM_WINDOWS
-        m_Data.unsemi_transparency = value;
-    
-        HWND hwnd = glfwGetWin32Window(m_Window);
+		m_Data.unsemi_transparency = value;
+	
+		HWND hwnd = glfwGetWin32Window(m_Window);
 
-        SetWindowLong(hwnd, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE) | WS_EX_LAYERED);
-        SetLayeredWindowAttributes(hwnd, 0, (value * 255), LWA_ALPHA);
+		SetWindowLong(hwnd, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE) | WS_EX_LAYERED);
+		SetLayeredWindowAttributes(hwnd, 0, (value * 255), LWA_ALPHA);
 #endif
 	}
 
-    int WindowsWindow::GetResizeEdge(float mx, float my) const
-    {
-        const int edgeSize = 5;
-        int w = m_Data.Width, h = m_Data.Height;
-        bool onLeft = (mx <= edgeSize);
-        bool onRight = (mx >= w - edgeSize);
-        bool onTop = (my <= edgeSize);
-        bool onBottom = (my >= h - edgeSize);
+	int WindowsWindow::GetResizeEdge(float mx, float my) const
+	{
+		if (glfwGetWindowAttrib(m_Window, GLFW_MAXIMIZED))
+			return 0;
+		if (uiLayer::Get().IsPointOverAnyWindow(mx, my))
+			return 0;
 
-        if (onTop && my < 30) return 0;
+		const int edgeSize = 5;
+		int w = m_Data.Width, h = m_Data.Height;
+		bool onLeft = (mx <= edgeSize);
+		bool onRight = (mx >= w - edgeSize);
+		bool onTop = (my <= edgeSize);
+		bool onBottom = (my >= h - edgeSize);
 
-        if (onLeft && onTop) return 5;
-        if (onRight && onTop) return 6;
-        if (onLeft && onBottom) return 7;
-        if (onRight && onBottom) return 8;
+		if (onTop && my < 30) return 0;
 
-        if (onLeft) return 1;
-        if (onRight) return 2;
-        if (onTop) return 3;
-        if (onBottom) return 4;
-        return 0;
-    }
+		if (onLeft && onTop) return 5;
+		if (onRight && onTop) return 6;
+		if (onLeft && onBottom) return 7;
+		if (onRight && onBottom) return 8;
 
-    void WindowsWindow::UpdateResizeCursor(int edge) 
-    {
-        GLFWcursor* cursor = m_CursorArrow;
-        switch (edge)
-        {
-        case 1: case 2: cursor = m_CursorHResize; break;
-        case 3: case 4: cursor = m_CursorVResize; break;
-        case 5: case 8: cursor = m_CursorNWSE; break;
-        case 6: case 7: cursor = m_CursorNESW; break;
-        default: cursor = m_CursorArrow; break;
-        }
-        glfwSetCursor(m_Window, cursor);
-    }
+		if (onLeft) return 1;
+		if (onRight) return 2;
+		if (onTop) return 3;
+		if (onBottom) return 4;
+		return 0;
+	}
 
-    void WindowsWindow::StartResizeWindow(int edge, int mouseX, int mouseY)
-    {
-        m_IsResizingWindow = true;
-        m_ResizeEdgeType = edge;
-        m_ResizeStartMouseX = mouseX;
-        m_ResizeStartMouseY = mouseY;
-        glfwGetWindowPos(m_Window, &m_ResizeStartWindowX, &m_ResizeStartWindowY);
-        m_ResizeStartWindowW = m_Data.Width;
-        m_ResizeStartWindowH = m_Data.Height;
-    }
+	void WindowsWindow::UpdateResizeCursor(int edge) 
+	{
+		GLFWcursor* cursor = m_CursorArrow;
+		switch (edge)
+		{
+		case 1: case 2: cursor = m_CursorHResize; break;
+		case 3: case 4: cursor = m_CursorVResize; break;
+		case 5: case 8: cursor = m_CursorNWSE; break;
+		case 6: case 7: cursor = m_CursorNESW; break;
+		default: cursor = m_CursorArrow; break;
+		}
+		glfwSetCursor(m_Window, cursor);
+	}
 
-    void WindowsWindow::DoResizeWindow(int mouseX, int mouseY)
-    {
-        if (!m_IsResizingWindow) return;
-        int dx = mouseX - m_ResizeStartMouseX;
-        int dy = mouseY - m_ResizeStartMouseY;
-        int newX = m_ResizeStartWindowX;
-        int newY = m_ResizeStartWindowY;
-        int newW = m_ResizeStartWindowW;
-        int newH = m_ResizeStartWindowH;
+	void WindowsWindow::StartResizeWindow(int edge, int mouseX, int mouseY)
+	{
+		m_IsResizingWindow = true;
+		m_ResizeEdgeType = edge;
+		m_ResizeStartMouseX = mouseX;
+		m_ResizeStartMouseY = mouseY;
+		glfwGetWindowPos(m_Window, &m_ResizeStartWindowX, &m_ResizeStartWindowY);
+		m_ResizeStartWindowW = m_Data.Width;
+		m_ResizeStartWindowH = m_Data.Height;
+	}
 
-        switch (m_ResizeEdgeType)
-        {
-        case 1:
-            newW = m_ResizeStartWindowW - dx;
-            newX = m_ResizeStartWindowX + dx;
-            break;
-        case 2:
-            newW = m_ResizeStartWindowW + dx;
-            break;
-        case 3:
-            newH = m_ResizeStartWindowH - dy;
-            newY = m_ResizeStartWindowY + dy;
-            break;
-        case 4:
-            newH = m_ResizeStartWindowH + dy;
-            break;
-        case 5:
-            newW = m_ResizeStartWindowW - dx;
-            newH = m_ResizeStartWindowH - dy;
-            newX = m_ResizeStartWindowX + dx;
-            newY = m_ResizeStartWindowY + dy;
-            break;
-        case 6:
-            newW = m_ResizeStartWindowW + dx;
-            newH = m_ResizeStartWindowH - dy;
-            newY = m_ResizeStartWindowY + dy;
-            break;
-        case 7:
-            newW = m_ResizeStartWindowW - dx;
-            newH = m_ResizeStartWindowH + dy;
-            newX = m_ResizeStartWindowX + dx;
-            break;
-        case 8:
-            newW = m_ResizeStartWindowW + dx;
-            newH = m_ResizeStartWindowH + dy;
-            break;
-        }
+	void WindowsWindow::DoResizeWindow(int mouseX, int mouseY)
+	{
+		if (!m_IsResizingWindow) return;
+		int dx = mouseX - m_ResizeStartMouseX;
+		int dy = mouseY - m_ResizeStartMouseY;
+		int newX = m_ResizeStartWindowX;
+		int newY = m_ResizeStartWindowY;
+		int newW = m_ResizeStartWindowW;
+		int newH = m_ResizeStartWindowH;
 
-        glfwSetWindowSize(m_Window, newW, newH);
+		switch (m_ResizeEdgeType)
+		{
+		case 1:
+			newW = m_ResizeStartWindowW - dx;
+			newX = m_ResizeStartWindowX + dx;
+			break;
+		case 2:
+			newW = m_ResizeStartWindowW + dx;
+			break;
+		case 3:
+			newH = m_ResizeStartWindowH - dy;
+			newY = m_ResizeStartWindowY + dy;
+			break;
+		case 4:
+			newH = m_ResizeStartWindowH + dy;
+			break;
+		case 5:
+			newW = m_ResizeStartWindowW - dx;
+			newH = m_ResizeStartWindowH - dy;
+			newX = m_ResizeStartWindowX + dx;
+			newY = m_ResizeStartWindowY + dy;
+			break;
+		case 6:
+			newW = m_ResizeStartWindowW + dx;
+			newH = m_ResizeStartWindowH - dy;
+			newY = m_ResizeStartWindowY + dy;
+			break;
+		case 7:
+			newW = m_ResizeStartWindowW - dx;
+			newH = m_ResizeStartWindowH + dy;
+			newX = m_ResizeStartWindowX + dx;
+			break;
+		case 8:
+			newW = m_ResizeStartWindowW + dx;
+			newH = m_ResizeStartWindowH + dy;
+			break;
+		}
 
-        if (newX != m_ResizeStartWindowX || newY != m_ResizeStartWindowY)
-        {
-            glfwSetWindowPos(m_Window, newX, newY);
-        }
-    }
+		glfwSetWindowSize(m_Window, newW, newH);
 
-    void WindowsWindow::StopResizeWindow()
-    {
-        m_IsResizingWindow = false;
-    }
+		if (newX != m_ResizeStartWindowX || newY != m_ResizeStartWindowY)
+		{
+			glfwSetWindowPos(m_Window, newX, newY);
+		}
+	}
+
+	void WindowsWindow::StopResizeWindow()
+	{
+		m_IsResizingWindow = false;
+	}
+
+	void WindowsWindow::SetWindowIcon(GLFWwindow* window, const std::string& iconPath)
+	{
+		int width, height, channels;
+		unsigned char* data = stbi_load(iconPath.c_str(), &width, &height, &channels, 4);
+		if (!data)
+		{
+			PS_CORE_WARN("Failed to load icon: {}", iconPath);
+			return;
+		}
+
+		GLFWimage image;
+		image.width = width;
+		image.height = height;
+		image.pixels = data;
+		glfwSetWindowIcon(window, 1, &image);
+		stbi_image_free(data);
+	}
 
 }

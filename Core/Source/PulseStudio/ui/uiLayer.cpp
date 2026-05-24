@@ -1,12 +1,18 @@
 #include "pspch.h"
 #include "uiLayer.h"
-#include "ui/ui.h"
+#include "uiTools/ui.h"
 #include "PulseStudio/Log.h"
 #include "PulseStudio/Application.h"
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
 
 namespace PulseStudio {
+
+	uiLayer& uiLayer::Get()
+	{
+		static uiLayer instance;
+		return instance;
+	}
 
 	uiLayer::uiLayer() : Layer("UILayer") {}
 
@@ -15,7 +21,7 @@ namespace PulseStudio {
 		for (auto* win : m_Windows)
 			delete win;
 		m_Windows.clear();
-		delete menuBar;
+		delete titleBar;
 	}
 
 	void uiLayer::OnAttach()
@@ -29,10 +35,14 @@ namespace PulseStudio {
 		int toolBarHeight = 30;
 		int statusBarHeight = 25;
 
-		menuBar = new uiMenuBar();
-		menuBar->OnAttach();
+		titleBar = new uiTitleBar();
+		titleBar->OnAttach();
+
+		m_StatusBar = new uiStatusBar();
+		m_StatusBar->OnAttach();
 
 		auto* fileExplorer = new uiWindow("FileExplorer");
+		auto* output = new uiWindow("Output");
 
 		m_Windows.push_back(fileExplorer);
 
@@ -46,7 +56,7 @@ namespace PulseStudio {
 	{
 		for (auto* win : m_Windows)
 			win->OnDetach();
-		if (menuBar) menuBar->OnDetach();
+		if (titleBar) titleBar->OnDetach();
 	}
 
 	void uiLayer::OnUpdate(float deltaTime)
@@ -65,9 +75,12 @@ namespace PulseStudio {
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-		if (menuBar) menuBar->OnUpdate(deltaTime);
+		if (titleBar) titleBar->OnUpdate(deltaTime);
+		if (m_StatusBar) m_StatusBar->OnUpdate(deltaTime);
 
 		MouseCircle::Get().OnUpdate(deltaTime);
+
+		if (m_StatusBar) m_StatusBar->SetStatusText("Ready");
 
 		for (auto* win : m_Windows)
 			win->OnUpdate(deltaTime);
@@ -75,17 +88,16 @@ namespace PulseStudio {
 
 	bool uiLayer::OnEvent(Event& event)
 	{
-		if (menuBar && menuBar->OnEvent(event))
-			return true;
+		if (titleBar && titleBar->OnEvent(event))
+			return true; 
 
 		if (MouseCircle::Get().OnEvent(event))
 			return true;
 
 		for (auto it = m_Windows.rbegin(); it != m_Windows.rend(); ++it)
 		{
-			(*it)->OnEvent(event);
-			if (event.m_Handled)
-				return false;
+			if ((*it)->OnEvent(event))
+				return true;
 		}
 
 		EventDispatcher dispatcher(event);
@@ -95,6 +107,8 @@ namespace PulseStudio {
 			int width = e.GetWidth(), height = e.GetHeight();
 			return false;
 			});
+
+		return false;
 	}
 
 	void uiLayer::AddWindow(uiWindow* window)
@@ -104,6 +118,27 @@ namespace PulseStudio {
 			m_Windows.push_back(window);
 			window->OnAttach();
 		}
+	}
+
+	bool uiLayer::IsPointOverAnyWindow(float x, float y)
+	{
+		auto& instance = Get();
+		for (auto* win : instance.m_Windows)
+		{
+			if (win->IsVisible())
+			{
+				float wx = win->GetX();
+				float wy = win->GetY();
+				float ww = win->GetWidth();
+				float wh = win->GetHeight();
+
+				if (x >= wx && x <= wx + ww && y >= wy && y <= wy + wh)
+				{
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 }

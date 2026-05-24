@@ -19,7 +19,8 @@ project "Core"
         "vendor/stb_image",
         "vendor/miniaudio",
         "vendor/spdlog/include",
-		"vendor/json/include"
+		"vendor/json/include",
+        "vendor"
     }
     
     defines

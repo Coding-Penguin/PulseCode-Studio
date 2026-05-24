@@ -45,6 +45,8 @@ namespace PulseStudio {
 
 		virtual void SetUnsemi_transparency(double value) = 0;
 
+		virtual void SetWindowIcon(GLFWwindow* window, const std::string& iconPath) = 0;
+
 		static Window* Create(const WindowProps& props = WindowProps());
 	};
 }

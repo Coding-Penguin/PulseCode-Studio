@@ -1,17 +1,20 @@
 #pragma once
 #include "PulseStudio/Layer.h"
+#include "uiTools/uiStatusBar.h"
 #include <vector>
 
 namespace PulseStudio {
 
     class uiWindow;
-    class uiMenuBar;
+    class uiTitleBar;
 	class uiButton;
 	class MouseCircle;
 
     class uiLayer : public Layer
     {
     public:
+        static uiLayer& Get();
+
         uiLayer();
         virtual ~uiLayer();
 
@@ -21,9 +24,12 @@ namespace PulseStudio {
         virtual bool OnEvent(Event& event) override;
 
         void AddWindow(uiWindow* window);
+
+        static bool IsPointOverAnyWindow(float x, float y);
     private:
         std::vector<uiWindow*> m_Windows;
-        uiMenuBar* menuBar = nullptr;
+        uiTitleBar* titleBar = nullptr;
+        uiStatusBar* m_StatusBar = nullptr;
     };
 
 }

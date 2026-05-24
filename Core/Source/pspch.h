@@ -28,6 +28,8 @@
 #include "PulseStudio/Core.h"
 #include "PulseStudio/Log.h"
 #include "PulseStudio/Theme.h"
+#include "PulseStudio/Channel.h"
+#include "PulseStudio/Settings.h"
 
 #include "PulseStudio/KeyCodes.h"
 #include "PulseStudio/MouseButtonCodes.h"
