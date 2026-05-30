@@ -334,7 +334,7 @@ namespace PulseStudio
 				return true;
 			}
 
-			if (inTitleBar && e.GetMouseButton() == GLFW_MOUSE_BUTTON_LEFT)
+			if (inTitleBar && e.GetMouseButton() == GLFW_MOUSE_BUTTON_LEFT && m_IsDraggable)
 			{
 				m_IsDragging = true;
 				m_DragStartX = mx;
@@ -358,7 +358,7 @@ namespace PulseStudio
 				return true;
 			}
 
-			if (IsInResizeZone(mx, my) && e.GetMouseButton() == GLFW_MOUSE_BUTTON_LEFT)
+			if (IsInResizeZone(mx, my) && e.GetMouseButton() == GLFW_MOUSE_BUTTON_LEFT && m_IsResizable)
 			{
 				m_IsResizing = true;
 				m_ResizeStartX = mx;

@@ -5,6 +5,7 @@
 #include "PulseStudio/Application.h"
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
+#include "CodeEditor/CodeEditor.h"
 
 namespace PulseStudio {
 
@@ -41,10 +42,10 @@ namespace PulseStudio {
 		m_StatusBar = new uiStatusBar();
 		m_StatusBar->OnAttach();
 
-		auto* fileExplorer = new uiWindow("FileExplorer");
-		auto* output = new uiWindow("Output");
+		//auto* fileExplorer = new uiWindow("FileExplorer");
+		//m_Windows.push_back(fileExplorer);
 
-		m_Windows.push_back(fileExplorer);
+		codeEditor = new CodeEditor();
 
 		for (auto* win : m_Windows)
 		{
@@ -78,6 +79,8 @@ namespace PulseStudio {
 		if (titleBar) titleBar->OnUpdate(deltaTime);
 		if (m_StatusBar) m_StatusBar->OnUpdate(deltaTime);
 
+		codeEditor->OnUpdate(deltaTime);
+
 		MouseCircle::Get().OnUpdate(deltaTime);
 
 		if (m_StatusBar) m_StatusBar->SetStatusText("Ready");
@@ -107,6 +110,19 @@ namespace PulseStudio {
 			int width = e.GetWidth(), height = e.GetHeight();
 			return false;
 			});
+
+		codeEditor->OnEvent(event);
+		if (event.GetEventType() == EventType::MouseMoved)
+		{
+			MouseMovedEvent& e = (MouseMovedEvent&)event;
+			float mx = e.GetX(), my = e.GetY();
+			if (event.GetEventType() == EventType::MouseMoved)
+			{
+				if (codeEditor && codeEditor->OnEvent(event))
+					return true;
+			}
+			return true; 
+		}
 
 		return false;
 	}

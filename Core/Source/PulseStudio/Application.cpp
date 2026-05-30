@@ -33,7 +33,7 @@ namespace PulseStudio {
 		Log::Init();
 		PS_CORE_INFO("Initilized log!");
 
-		ThemeManager::SetTheme(Theme::Cool_Slate);
+		ThemeManager::SetTheme(Theme::Dark);
 
 		WindowProps props("Pulse-Studio Integrated Development Environment", 1720, 1000);
 		m_MainWindow = std::unique_ptr<Window>(Window::Create(props));
@@ -44,7 +44,7 @@ namespace PulseStudio {
 		if (!isFontLoaded())
 		{
 			PS_CORE_INFO("Loading font...");
-			TextRenderer::Get().LoadFont("H:/Projects/CppProject/Pulse-Studio/Core/Resources/Fonts/Ubuntu-L.ttf", 24.0f);
+			TextRenderer::Get().LoadFont("H:/Projects/CppProject/Pulse-Studio/Core/Resources/Fonts/JetBrainsMono-Regular.ttf", 24.0f);
 			SetFontLoaded(true);
 			PS_CORE_INFO("Font loaded successfully.");
 		}

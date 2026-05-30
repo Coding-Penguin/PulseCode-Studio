@@ -25,6 +25,7 @@ namespace PulseStudio {
 			: KeyEvent(keycode), m_RepeatCount(repeatCount) {}
 
 		inline int GetRepeatCount() const { return m_RepeatCount; }
+		inline int GetMods() const { return 0; } // Placeholder for modifier keys
 
 		std::string ToString() const override
 		{
@@ -53,5 +54,30 @@ namespace PulseStudio {
 
 		EVENT_CLASS_TYPE(KeyReleased)
 	};
+
+	class CharEvent : public Event
+	{
+	public:
+		CharEvent(unsigned int codepoint)
+			: m_Codepoint(codepoint)
+		{
+		}
+
+		unsigned int GetCharCode() const { return m_Codepoint; }
+
+		std::string ToString() const override
+		{
+			std::stringstream ss;
+			ss << "CharEvent: " << m_Codepoint;
+			return ss.str();
+		}
+
+		EVENT_CLASS_TYPE(Char)
+		EVENT_CLASS_CATEGORY(EventCategoryKeyboard | EventCategoryInput)
+
+	private:
+		unsigned int m_Codepoint;
+	};
+
 
 }

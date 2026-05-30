@@ -9,6 +9,9 @@ namespace PulseStudio {
     class TextRenderer
     {
     public:
+        TextRenderer() = default;
+        ~TextRenderer();
+
         static TextRenderer& Get();
 
         bool LoadFont(const std::string& fontPath, float fontSize);
@@ -18,9 +21,6 @@ namespace PulseStudio {
 
         void Unload();
     private:
-        TextRenderer() = default;
-        ~TextRenderer();
-
         struct CharInfo
         {
             float advance;

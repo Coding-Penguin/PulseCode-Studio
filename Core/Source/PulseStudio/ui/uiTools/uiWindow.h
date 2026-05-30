@@ -40,7 +40,13 @@ namespace PulseStudio {
 		int GetY() const { return (int)m_RectY; }
 		int GetWidth() const { return (int)m_RectWidth; }
 		int GetHeight() const { return (int)m_RectHeight; }
+
+		void SetDraggable(bool draggable) { m_IsDraggable = draggable; }
+		void SetResizable(bool resizable) { m_IsResizable = resizable; }
 	private:
+		bool m_IsDraggable = true;
+		bool m_IsResizable = true;
+
 		std::string m_name = "uiWindow";
 		float m_RectX = 100.0f;
 		float m_RectY = 150.0f;

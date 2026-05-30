@@ -9,6 +9,7 @@ namespace PulseStudio {
     class uiTitleBar;
 	class uiButton;
 	class MouseCircle;
+	class CodeEditor;
 
     class uiLayer : public Layer
     {
@@ -30,6 +31,7 @@ namespace PulseStudio {
         std::vector<uiWindow*> m_Windows;
         uiTitleBar* titleBar = nullptr;
         uiStatusBar* m_StatusBar = nullptr;
+        CodeEditor* codeEditor = nullptr;
     };
 
 }

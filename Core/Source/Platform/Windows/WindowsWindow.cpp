@@ -201,6 +201,14 @@ namespace PulseStudio {
 				if (data.EventCallback)
 					data.EventCallback(event);
 			});
+
+		glfwSetCharCallback(m_Window, [](GLFWwindow* window, unsigned int codepoint)
+			{
+				WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+				CharEvent event(codepoint);
+				if (data.EventCallback)
+					data.EventCallback(event);
+			});
 	}
 
 	void WindowsWindow::OnUpdate()
