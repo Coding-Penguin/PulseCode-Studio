@@ -3,6 +3,9 @@
 
 #ifdef PS_PLATFORM_LINUX
 #define GLFW_EXPOSE_NATIVE_X11
+#define _NET_WM_WINDOW_TYPE
+#define _NET_WM_WINDOW_TYPE_UTILITY
+#define _NET_WM_WINDOW_TYPE_TOOLBAR
 #endif
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
@@ -169,8 +172,13 @@ namespace PulseStudio {
 		glfwSetScrollCallback(m_Window, [](GLFWwindow* window, double xOffset, double yOffset)
 			{
 				WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
-				MouseScrolledEvent event((float)xOffset, (float)yOffset);
-				if (data.EventCallback) data.EventCallback(event);
+
+				int mods = 0;
+				if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS)
+					mods |= GLFW_MOD_CONTROL;
+				MouseScrolledEvent event((float)xOffset, (float)yOffset, mods);
+				if (data.EventCallback)
+					data.EventCallback(event);
 			});
 
 		glfwSetCursorPosCallback(m_Window, [](GLFWwindow* window, double xPos, double yPos)

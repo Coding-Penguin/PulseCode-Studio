@@ -29,7 +29,7 @@ namespace PulseStudio {
 	void CodeEditor::OnUpdate(float deltaTime)
 	{
 		float contentX = 0.0f;
-		float contentY = 55.0f;
+		float contentY = 105.0f;
 		Application& app = Application::Get();
 		float contentW = app.GetWindow().GetWidth();
 		float contentH = app.GetWindow().GetHeight() - contentY;
@@ -106,7 +106,12 @@ namespace PulseStudio {
 				return true;
 			}
 		}
-
+		if (event.GetEventType() == EventType::MouseScrolled)
+		{
+			MouseScrolledEvent& e = (MouseScrolledEvent&)event;
+			m_View.HandleScroll(e.GetXOffset() * 20.0f, -e.GetYOffset() * 20.0f);
+			return true;
+		}
 		return false;
 	}
 
@@ -268,8 +273,25 @@ namespace PulseStudio {
 			KeyPressedEvent& e = *new KeyPressedEvent(ch, 0);
 			int mods = e.GetMods();
 			CursorPosition pos = m_Cursor.GetPosition();
-			m_Buffer.InsertChar(pos.line, pos.col, (char)ch);
-			m_Cursor.Move(0, 1, m_Buffer, mods & GLFW_MOD_SHIFT);
+			if (ch == '(' || ch == '[' || ch == '{')
+			{
+				char right = (ch == '(' ? ')' : (ch == '[' ? ']' : '}'));
+
+				const std::string& line = m_Buffer.GetLine(pos.line);
+				bool nextIsMatching = (pos.col < (int)line.size() && line[pos.col] == right);
+
+				m_Buffer.InsertChar(pos.line, pos.col, (char)ch);
+				if (!nextIsMatching)
+				{
+					m_Buffer.InsertChar(pos.line, pos.col + 1, right);
+				}
+				m_Cursor.SetPosition(pos.line, pos.col + 1);
+			}
+			else
+			{
+				m_Buffer.InsertChar(pos.line, pos.col, (char)ch);
+				m_Cursor.Move(0, 1, m_Buffer, false);
+			}
 			m_Cursor.EndSelection();
 		}
 	}

@@ -1,6 +1,7 @@
 #pragma once
 #include "PulseStudio/Layer.h"
 #include "uiTools/uiStatusBar.h"
+#include "uiTools/uiShortcutBar.h"
 #include <vector>
 
 namespace PulseStudio {
@@ -32,6 +33,7 @@ namespace PulseStudio {
         uiTitleBar* titleBar = nullptr;
         uiStatusBar* m_StatusBar = nullptr;
         CodeEditor* codeEditor = nullptr;
+		uiShortcutBar* m_ShortcutBar = nullptr;
     };
 
 }

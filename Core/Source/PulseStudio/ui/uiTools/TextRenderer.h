@@ -20,6 +20,8 @@ namespace PulseStudio {
         float GetTextHeight() const;
 
         void Unload();
+
+		bool IsInitialized() const { return m_Initialized; }
     private:
         struct CharInfo
         {

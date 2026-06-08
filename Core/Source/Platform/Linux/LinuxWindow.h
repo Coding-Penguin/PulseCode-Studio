@@ -35,6 +35,7 @@ namespace PulseStudio {
             std::string Title;
             unsigned int Width, Height;
             bool VSync;
+
             EventCallbackFn EventCallback;
             void* WindowPtr;
         };

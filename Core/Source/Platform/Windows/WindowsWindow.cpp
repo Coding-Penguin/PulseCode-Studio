@@ -17,6 +17,8 @@
 
 #include "PulseStudio/ui/uiLayer.h"
 
+#include "PulseStudio/Application.h"
+
 #include <stb_image.h>
 
 #include "PulseStudio/Channel.h"
@@ -173,8 +175,11 @@ namespace PulseStudio {
 		glfwSetScrollCallback(m_Window, [](GLFWwindow* window, double xOffset, double yOffset)
 			{
 				WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
-
-				MouseScrolledEvent event((float)xOffset, (float)yOffset);
+				
+				int mods = 0;
+				if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS)
+					mods |= GLFW_MOD_CONTROL;
+				MouseScrolledEvent event((float)xOffset, (float)yOffset, mods);
 				if (data.EventCallback)
 					data.EventCallback(event);
 			});

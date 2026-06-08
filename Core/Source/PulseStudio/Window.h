@@ -20,7 +20,7 @@ namespace PulseStudio {
 		std::string Title;
 		unsigned int Width, Height;
 
-		WindowProps(const std::string& title = "Pulse Studio", unsigned int width = 1720, unsigned int height = 1000)
+		WindowProps(const std::string& title = "Pulse Studio", unsigned int width = 1720, unsigned int height = 1000, bool isToolWindow = false)
 			: Title(title), Width(width), Height(height)
 		{
 		}

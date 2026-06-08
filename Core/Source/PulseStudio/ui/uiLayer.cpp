@@ -45,12 +45,33 @@ namespace PulseStudio {
 		//auto* fileExplorer = new uiWindow("FileExplorer");
 		//m_Windows.push_back(fileExplorer);
 
-		codeEditor = new CodeEditor();
-
 		for (auto* win : m_Windows)
 		{
 			win->OnAttach();
 		}
+
+		m_ShortcutBar = new uiShortcutBar();
+		m_ShortcutBar->OnAttach();
+		std::vector<ShortcutItem> fileGroup = 
+		{
+			{"new", "N", []() { PS_INFO("New File"); }},
+			{"open", "O", []() { PS_INFO("Open File"); }},
+			{"save", "S", []() { PS_INFO("Save File"); }},
+			{"saveall", "SA", []() { PS_INFO("Save All"); }}
+		};
+		std::vector<ShortcutItem> editGroup =
+		{
+			{"undo", "U", []() { PS_INFO("Undo"); }},
+			{"redo", "R", []() { PS_INFO("Redo"); }},
+			{"cut", "Ct", []() { PS_INFO("Cut"); }},
+			{"copy", "Co", []() { PS_INFO("Copy"); }},
+			{"paste", "P", []() { PS_INFO("Paste"); }}
+		};
+
+		m_ShortcutBar->AddGroup(fileGroup, true);
+		m_ShortcutBar->AddGroup(editGroup, false);
+
+		codeEditor = new CodeEditor();
 	}
 
 	void uiLayer::OnDetach() 
@@ -76,10 +97,15 @@ namespace PulseStudio {
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+		if (codeEditor) codeEditor->OnUpdate(deltaTime);
+		
 		if (titleBar) titleBar->OnUpdate(deltaTime);
+		if (m_ShortcutBar)
+		{
+			m_ShortcutBar->OnUpdate(deltaTime);
+			m_ShortcutBar->Draw();
+		}
 		if (m_StatusBar) m_StatusBar->OnUpdate(deltaTime);
-
-		codeEditor->OnUpdate(deltaTime);
 
 		MouseCircle::Get().OnUpdate(deltaTime);
 
@@ -92,7 +118,10 @@ namespace PulseStudio {
 	bool uiLayer::OnEvent(Event& event)
 	{
 		if (titleBar && titleBar->OnEvent(event))
-			return true; 
+			return true;
+
+		if (m_ShortcutBar && m_ShortcutBar->OnEvent(event))
+			return true;
 
 		if (MouseCircle::Get().OnEvent(event))
 			return true;
@@ -112,18 +141,6 @@ namespace PulseStudio {
 			});
 
 		codeEditor->OnEvent(event);
-		if (event.GetEventType() == EventType::MouseMoved)
-		{
-			MouseMovedEvent& e = (MouseMovedEvent&)event;
-			float mx = e.GetX(), my = e.GetY();
-			if (event.GetEventType() == EventType::MouseMoved)
-			{
-				if (codeEditor && codeEditor->OnEvent(event))
-					return true;
-			}
-			return true; 
-		}
-
 		return false;
 	}
 

@@ -12,10 +12,7 @@ namespace PulseStudio {
 		String,
 		Comment,
 		Number,
-		Preprocessor,
-		Macro,
-		Object,
-		Variable
+		Preprocessor
 	};
 
 	struct HighlightSpan
@@ -43,14 +40,11 @@ namespace PulseStudio {
 		{
 			switch (color)
 			{
-			case HighlightColor::Keyword:     return glm::vec3(0.5f, 0.8f, 1.0f);
+			case HighlightColor::Keyword:     return glm::vec3(0.6f, 0.8f, 1.0f);
 			case HighlightColor::String:      return glm::vec3(0.8f, 0.6f, 0.2f);
 			case HighlightColor::Comment:     return glm::vec3(0.3f, 0.7f, 0.3f);
-			case HighlightColor::Number:      return glm::vec3(0.7f, 0.5f, 0.8f);
-			case HighlightColor::Preprocessor:return glm::vec3(0.7f, 0.4f, 0.9f);
-			case HighlightColor::Macro:       return glm::vec3(0.9f, 0.6f, 0.2f);
-			case HighlightColor::Object:	  return glm::vec3(0.5f, 0.8f, 0.5f);
-			case HighlightColor::Variable:	  return glm::vec3(0.9f, 0.9f, 1.0f);
+			case HighlightColor::Number:      return glm::vec3(0.7f, 0.7f, 0.8f);
+			case HighlightColor::Preprocessor:return glm::vec3(0.5f, 0.5f, 0.5f);
 			default:                          return glm::vec3(0.9f, 0.9f, 0.95f);
 			}
 		}

@@ -24,7 +24,6 @@ namespace PulseStudio
 		void DrawMinimizeButton(float x, float y, float w, float h, bool hovered);
 		void DrawMaximizeButton(float x, float y, float w, float h, bool hovered, bool isMaximized);
 		void DrawCloseButton(float x, float y, float w, float h, bool hovered);
-
 	private:
 		float m_AccumulatedDragX = 0.0f;
 		float m_AccumulatedDragY = 0.0f;

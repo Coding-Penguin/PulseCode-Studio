@@ -24,13 +24,13 @@ namespace PulseStudio
 	void uiTitleBar::OnAttach()
 	{
 		m_Logo.reset(new PhotoRenderer());
-		m_Logo->LoadFromFile("H:/Projects/CppProject/Pulse-Studio/Resources/Images/System.png");
+		m_Logo->LoadFromFile("H:/Projects/CppProject/Pulse-Studio/Core/Resources/Images/System.png");
 		PS_INFO("Logo loaded: {0}", m_Logo->IsLoaded());
 
 		float x = 40, y = 10;
 		auto addTitleButton = [&](const std::string& text, float width)
 			{
-				auto btn = std::make_unique<uiButton>(text, x, y, width, 30/*, ButtonStyles::NoBackgroundOrLine*/);
+				auto btn = std::make_unique<uiButton>(text, x, y, width, 30, ButtonStyles::NoBackgroundOrLine);
 				btn->SetCallback([=]() { PS_INFO(std::format("Clicked \"{}\"", text)); });
 				m_Buttons.push_back(std::move(btn));
 				x += width + 10;
