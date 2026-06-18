@@ -121,9 +121,9 @@ namespace PulseStudio {
 			glClear(GL_COLOR_BUFFER_BIT);
 			return true;
 		}
-		else if (ThemeManager::GetCurrentTheme() == Theme::Forest)
+		else if (ThemeManager::GetCurrentTheme() == Theme::Hacker)
 		{
-			glClearColor(0.07f, 0.2f, 0.1f, 1);
+			glClearColor(0.067f, 0.073f, 0.07f, 1);
 			glClear(GL_COLOR_BUFFER_BIT);
 			return true;
 		}
@@ -155,15 +155,19 @@ namespace PulseStudio {
 	void Application::Run()
 	{
 		PS_TRACE("Pulse Studio initialized and running.");
-		PS_DEBUG("Hello from Pulse-Studio!");
 
+		float lastTime = (float)glfwGetTime();
 		do 
 		{
+			float currentTime = (float)glfwGetTime();
+			float deltaTime = currentTime - lastTime;
+			lastTime = currentTime;
+
 			SetGLFWColor();
 
 			for (Layer* layer : m_LayerStack)
 				if (layer)
-					layer->OnUpdate(0.0f);
+					layer->OnUpdate(deltaTime);
 
 			if (m_MainWindow)
 			{

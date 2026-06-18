@@ -124,5 +124,4 @@
 #define PS_KEY_RIGHT_ALT          346
 #define PS_KEY_RIGHT_SUPER        347
 #define PS_KEY_MENU               348
-
 #define PS_KEY_LAST               PS_KEY_MENU

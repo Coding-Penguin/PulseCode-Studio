@@ -25,6 +25,52 @@ namespace PulseStudio {
 		int newLine = m_Position.line + dLine;
 		int newCol = m_Position.col + dCol;
 
+		if (dLine != 0)
+		{
+			newLine = m_Position.line + dLine;
+			newCol = m_Position.col;
+		}
+		else if (dCol != 0)
+		{
+			int newPos = m_Position.col + dCol;
+			if (newPos < 0)
+			{
+				if (m_Position.line > 0)
+				{
+					newLine = m_Position.line - 1;
+					newCol = buffer.GetLineLength(newLine);
+				}
+				else
+				{
+					newCol = 0;
+				}
+			}
+			else
+			{
+				int lineLen = buffer.GetLineLength(m_Position.line);
+				if (newPos > lineLen)
+				{
+					if (m_Position.line + 1 < buffer.GetLineCount())
+					{
+						newLine = m_Position.line + 1;
+						newCol = 0;
+					}
+					else
+					{
+						newCol = lineLen;
+					}
+				}
+				else
+				{
+					newCol = newPos;
+				}
+			}
+		}
+		else
+		{
+			return;
+		}
+
 		if (newLine < 0) newLine = 0;
 		int maxLine = buffer.GetLineCount() - 1;
 		if (newLine > maxLine) newLine = maxLine;
@@ -63,8 +109,7 @@ namespace PulseStudio {
 
 	void Cursor::GetSelectionRange(int& startLine, int& startCol, int& endLine, int& endCol) const
 	{
-		if (m_Anchor.line < m_Position.line ||
-			(m_Anchor.line == m_Position.line && m_Anchor.col < m_Position.col))
+		if (m_Anchor.line < m_Position.line || (m_Anchor.line == m_Position.line && m_Anchor.col < m_Position.col))
 		{
 			startLine = m_Anchor.line; startCol = m_Anchor.col;
 			endLine = m_Position.line; endCol = m_Position.col;

@@ -88,9 +88,9 @@ namespace PulseStudio {
 				float cx = circle.GetX(), cy = circle.GetY();
 				float radius = circle.GetRadius();
 
-				const float highlightColor[3] = { 0.5f, 0.5f, 0.5f };
+				const float highlightColor[3] = { 0.3f, 0.3f, 0.3f };
 				const float minAlpha = 0.01f;
-				const float maxAlpha = 0.5f;
+				const float maxAlpha = 0.3f;
 
 				int segments = std::max(4, (int)(std::max(m_Width, m_Height) / 8.0f));
 				glLineWidth(1.0f);
@@ -179,7 +179,7 @@ namespace PulseStudio {
 				bool highlighted = circle.IsIntersectingRect(absX, absY, m_Width, m_Height);
 				if (highlighted)
 				{
-					glColor4f(0.5f, 0.5f, 0.5f, 0.5f);
+					glColor4f(0.5f, 0.5f, 0.5f, 0.3f);
 				}
 				else
 				{
@@ -213,7 +213,7 @@ namespace PulseStudio {
 			const float defaultColor[3] = { 0.3f, 0.3f, 0.3f };
 			const float highlightColor[3] = { 0.5f, 0.5f, 0.5f };
 
-			int segments = std::max(10, (int)(std::max(m_Width, m_Height) / 5.0f));
+			int segments = std::max(30, (int)(std::max(m_Width, m_Height) / 5.0f));
 			glLineWidth(1.0f);
 			glBegin(GL_LINES);
 
@@ -314,7 +314,18 @@ namespace PulseStudio {
 			MouseMovedEvent& e = (MouseMovedEvent&)event;
 			bool inside = IsPointInside(e.GetX(), e.GetY(), parentX, parentY);
 			if (inside != m_Hovered)
+			{
 				m_Hovered = inside;
+				if (inside)
+				{
+					m_HoverTimer = 0.0f;
+					m_ShowTooltip = false;
+				}
+				else
+				{
+					m_ShowTooltip = false;
+				}
+			}
 			return false;
 		}
 		else if (event.GetEventType() == EventType::MouseButtonPressed)
@@ -327,6 +338,49 @@ namespace PulseStudio {
 			}
 		}
 		return false;
+	}
+
+	void uiButton::OnTooltipUpdate(float deltaTime) 
+	{
+		if (m_Hovered && !m_ShowTooltip)
+		{
+			m_HoverTimer += deltaTime;
+			if (m_HoverTimer >= 0.5f)
+			{
+				m_ShowTooltip = true;
+			}
+		}
+	}
+
+	void uiButton::DrawTooltip(float parentX, float parentY) const
+	{
+		if (!m_ShowTooltip || m_Tooltip.empty()) return;
+		float absX = parentX + m_X;
+		float absY = parentY + m_Y;
+
+		float textWidth = TextRenderer::Get().GetTextWidth(m_Tooltip);
+		float textHeight = TextRenderer::Get().GetTextHeight();
+		float padding = 8.0f;
+		float tooltipW = textWidth + padding * 2;
+		float tooltipH = textHeight + padding * 2;
+		float tooltipX = absX + m_Width / 2 - tooltipW / 2;
+		float tooltipY = absY + tooltipH - 5;
+
+		if (tooltipY < 0) tooltipY = absY + m_Height + 5;
+
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glColor4f(0.1f, 0.1f, 0.1f, 0.7f);
+		glBegin(GL_QUADS);
+		glVertex2f(tooltipX, tooltipY);
+		glVertex2f(tooltipX + tooltipW, tooltipY);
+		glVertex2f(tooltipX + tooltipW, tooltipY + tooltipH);
+		glVertex2f(tooltipX, tooltipY + tooltipH);
+		glEnd();
+
+		float textX = tooltipX + padding;
+		float textY = tooltipY + (tooltipH - textHeight) / 2;
+		TextRenderer::Get().DrawText(m_Tooltip, textX, textY, 1.0f, 1.0f, 1.0f, 0.9f);
 	}
 
 }

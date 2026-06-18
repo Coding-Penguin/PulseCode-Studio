@@ -105,7 +105,7 @@ namespace PulseStudio {
 				{
 				case GLFW_PRESS:
 				{
-					KeyPressedEvent event(key, 0);
+					KeyPressedEvent event(key, 0, mods);
 					if (data.EventCallback) data.EventCallback(event);
 					break;
 				}
@@ -117,7 +117,7 @@ namespace PulseStudio {
 				}
 				case GLFW_REPEAT:
 				{
-					KeyPressedEvent event(key, 1);
+					KeyPressedEvent event(key, 1, mods);
 					if (data.EventCallback) data.EventCallback(event);
 					break;
 				}

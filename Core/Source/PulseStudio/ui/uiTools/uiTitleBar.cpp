@@ -44,6 +44,8 @@ namespace PulseStudio
 		addTitleButton("Debug", 75);
 		addTitleButton("Tools", 75);
 		addTitleButton("Help", 70);
+		x += 30;
+		addTitleButton("Search...", 130);
 	}
 
 	void uiTitleBar::OnDetach()

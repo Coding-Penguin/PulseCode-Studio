@@ -23,6 +23,9 @@ namespace PulseStudio {
 			delete win;
 		m_Windows.clear();
 		delete titleBar;
+		delete m_StatusBar;
+		delete m_ShortcutBar;
+		delete codeEditor;
 	}
 
 	void uiLayer::OnAttach()
@@ -34,7 +37,7 @@ namespace PulseStudio {
 		int height = app.GetWindow().GetHeight();
 		int topBarHeight = 30;
 		int toolBarHeight = 30;
-		int statusBarHeight = 25;
+		int statusBarHeight = 35;
 
 		titleBar = new uiTitleBar();
 		titleBar->OnAttach();
@@ -42,8 +45,11 @@ namespace PulseStudio {
 		m_StatusBar = new uiStatusBar();
 		m_StatusBar->OnAttach();
 
-		//auto* fileExplorer = new uiWindow("FileExplorer");
-		//m_Windows.push_back(fileExplorer);
+		uiWindow::InitDockSystem(0.0f, 110.0f, width, height - 145.0f);
+
+		auto* fileExplorer = new uiWindow("FileExplorer");
+		uiWindow::DockWindow(fileExplorer, DockRegion::Left);
+		m_Windows.push_back(fileExplorer);
 
 		for (auto* win : m_Windows)
 		{
@@ -54,22 +60,40 @@ namespace PulseStudio {
 		m_ShortcutBar->OnAttach();
 		std::vector<ShortcutItem> fileGroup = 
 		{
-			{"new", "N", []() { PS_INFO("New File"); }},
-			{"open", "O", []() { PS_INFO("Open File"); }},
-			{"save", "S", []() { PS_INFO("Save File"); }},
-			{"saveall", "SA", []() { PS_INFO("Save All"); }}
+			{"new", "N", "New File", []() { PS_INFO("New File"); }},
+			{"open", "O", "Open File...", []() { PS_INFO("Open File"); }},
+			{"save", "S", "Save File", []() { PS_INFO("Save File"); }},
+			{"saveall", "SA", "Save All Files", []() { PS_INFO("Save All"); }}
 		};
 		std::vector<ShortcutItem> editGroup =
 		{
-			{"undo", "U", []() { PS_INFO("Undo"); }},
-			{"redo", "R", []() { PS_INFO("Redo"); }},
-			{"cut", "Ct", []() { PS_INFO("Cut"); }},
-			{"copy", "Co", []() { PS_INFO("Copy"); }},
-			{"paste", "P", []() { PS_INFO("Paste"); }}
+			{"undo", "U", "Undo", []() { PS_INFO("Undo"); }},
+			{"redo", "R", "Redo", []() { PS_INFO("Redo"); }},
+			{"cut", "Ct", "Cut", []() { PS_INFO("Cut"); }},
+			{"copy", "Co", "Copy", []() { PS_INFO("Copy"); }},
+			{"paste", "P", "Paste", []() { PS_INFO("Paste"); }}
+		};
+		std::vector<ShortcutItem> buildGroup =
+		{
+			{"debug", "D", "Debug", []() { PS_INFO("Debug"); }},
+			{"build", "B", "Build", []() { PS_INFO("Build"); }},
+			{"rebuild", "RB", "Rebuild", []() { PS_INFO("Rebuild"); }},
+			{"clean", "Cl", "Clean", []() { PS_INFO("Clean"); }},
+			{"run", "R", "Run", []() { PS_INFO("Run"); }}
+		};
+		std::vector<ShortcutItem> bookmarkGroup =
+		{
+			{"findbookmark", "FB", "Find Bookmark", []() { PS_INFO("Find Bookmark"); }},
+			{"addbookmark", "AB", "Add Bookmark", []() { PS_INFO("Add Bookmark"); }},
+			{"deletebookmark", "DB", "Delete Bookmark", []() { PS_INFO("Delete Bookmark"); }},
+			{"nextbookmark", "NB", "Next Bookmark", []() { PS_INFO("Next Bookmark"); }},
+			{"clearbookmarks", "CB", "Clear Bookmarks", []() { PS_INFO("Clear Bookmarks"); }}
 		};
 
 		m_ShortcutBar->AddGroup(fileGroup, true);
-		m_ShortcutBar->AddGroup(editGroup, false);
+		m_ShortcutBar->AddGroup(editGroup, true);
+		m_ShortcutBar->AddGroup(buildGroup, true);
+		m_ShortcutBar->AddGroup(bookmarkGroup, false);
 
 		codeEditor = new CodeEditor();
 	}
@@ -79,6 +103,8 @@ namespace PulseStudio {
 		for (auto* win : m_Windows)
 			win->OnDetach();
 		if (titleBar) titleBar->OnDetach();
+		if (m_StatusBar) m_StatusBar->OnDetach();
+		if (m_ShortcutBar) m_ShortcutBar->OnDetach();
 	}
 
 	void uiLayer::OnUpdate(float deltaTime)
@@ -97,8 +123,6 @@ namespace PulseStudio {
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-		if (codeEditor) codeEditor->OnUpdate(deltaTime);
-		
 		if (titleBar) titleBar->OnUpdate(deltaTime);
 		if (m_ShortcutBar)
 		{
@@ -111,19 +135,32 @@ namespace PulseStudio {
 
 		if (m_StatusBar) m_StatusBar->SetStatusText("Ready");
 
+		if (codeEditor) codeEditor->OnUpdate(deltaTime);
+
 		for (auto* win : m_Windows)
 			win->OnUpdate(deltaTime);
+
+		uiWindow::DrawDockAreas();
+
+		float leftW = width * 0.2f,
+			rightW = width * 0.2f,
+			bottomH = height * 0.3f;
+		float mainW = (float)width, mainH = (float)height;
+		float centerW = mainW - leftW - rightW;
+		float centerH = mainH - bottomH;
+		float yOffset = 110.0f;
+		codeEditor->SetViewBounds(leftW, yOffset, centerW, centerH);
+		codeEditor->OnUpdate(deltaTime);
 	}
 
 	bool uiLayer::OnEvent(Event& event)
 	{
+		MouseCircle::Get().OnEvent(event);
+
 		if (titleBar && titleBar->OnEvent(event))
 			return true;
 
 		if (m_ShortcutBar && m_ShortcutBar->OnEvent(event))
-			return true;
-
-		if (MouseCircle::Get().OnEvent(event))
 			return true;
 
 		for (auto it = m_Windows.rbegin(); it != m_Windows.rend(); ++it)
@@ -132,15 +169,29 @@ namespace PulseStudio {
 				return true;
 		}
 
+		if (codeEditor) return codeEditor->OnEvent(event);
+
 		EventDispatcher dispatcher(event);
 		dispatcher.Dispatch<WindowResizeEvent>([this](WindowResizeEvent& e)
 			{
-			int topBarHeight = 30, toolBarHeight = 30, statusBarHeight = 25;
 			int width = e.GetWidth(), height = e.GetHeight();
+			uiWindow::OnWindowResize(width, height - 145.0f);
+
+			Application& app = Application::Get();
+			float leftW = app.GetWindow().GetWidth() * 0.2f,
+				rightW = app.GetWindow().GetWidth() * 0.2f,
+				bottomH = app.GetWindow().GetHeight() * 0.3f;
+			float mainW = (float)width;
+			float mainH = (float)height;
+			float centerW = mainW - leftW - rightW;
+			float centerH = mainH - bottomH;
+			float yOffset = 110.0f;
+
+			EditorView::Get().SetBounds(leftW, yOffset, centerW, centerH);
+
 			return false;
 			});
 
-		codeEditor->OnEvent(event);
 		return false;
 	}
 

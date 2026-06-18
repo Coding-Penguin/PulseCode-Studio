@@ -26,10 +26,10 @@ namespace PulseStudio
 
 		glBegin(GL_TRIANGLE_FAN);
 		glVertex2f(mx, my);
-		int segments = 1000; // Number of segments to approximate the circle
+		int segments = 2048; // Number of segments to approximate the circle
 		for (int i = 0; i <= segments; ++i)
 		{
-			float angle = 2.0f * 3.1415926f * i / segments;
+			float angle = 2.0f * 3.14159265f * i / segments;
 			float x = mx + cos(angle) * m_Radius;
 			float y = my + sin(angle) * m_Radius;
 			glVertex2f(x, y);
@@ -44,6 +44,7 @@ namespace PulseStudio
 			MouseMovedEvent& e = (MouseMovedEvent&)event;
 			mx = e.GetX();
 			my = e.GetY();
+			return false;
 		}
 		return false;
 	}

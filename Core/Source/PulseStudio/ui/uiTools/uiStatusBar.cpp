@@ -107,9 +107,9 @@ namespace PulseStudio {
         {
             glColor4f(0.15f, 0.2f, 0.32f, 1);
         }
-        else if (ThemeManager::GetCurrentTheme() == Theme::Forest)
+        else if (ThemeManager::GetCurrentTheme() == Theme::Hacker)
         {
-            glColor4f(0.13f, 0.25f, 0.15f, 1);
+            glColor4f(0.072f, 0.075f, 0.09f, 1);
         }
         else if (ThemeManager::GetCurrentTheme() == Theme::Sand)
         {

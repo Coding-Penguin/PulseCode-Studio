@@ -29,6 +29,10 @@ namespace PulseStudio {
 
         void SetPosition(float x, float y) { m_X = x; m_Y = y; }
 
+        void SetTooltip(const std::string& tooltip) { m_Tooltip = tooltip; }
+        void OnTooltipUpdate(float deltaTime);
+        void DrawTooltip(float parentX, float parentY) const;
+
 		float GetX() const { return m_X; }
 		float GetY() const { return m_Y; }
 		float GetWidth() const { return m_Width; }
@@ -37,6 +41,9 @@ namespace PulseStudio {
 		std::string GetText() const { return m_Text; }
     private:
         std::string m_Text;
+        std::string m_Tooltip;
+        float m_HoverTimer = 0.0f;
+        bool m_ShowTooltip = false;
         float m_X, m_Y, m_Width, m_Height;
         float m_Color[4];
         bool m_Hovered = false;

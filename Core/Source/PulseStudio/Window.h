@@ -7,14 +7,6 @@
 
 namespace PulseStudio {
 
-	enum class BackdropStyle
-	{
-		Solid,
-		Transparent,
-		Mica,
-		Acrylic
-	};
-
 	struct WindowProps
 	{
 		std::string Title;

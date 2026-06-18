@@ -21,12 +21,11 @@ namespace PulseStudio {
 	class KeyPressedEvent : public KeyEvent
 	{
 	public:
-		KeyPressedEvent(int keycode, int repeatCount)
-			: KeyEvent(keycode), m_RepeatCount(repeatCount) {}
+		KeyPressedEvent(int keycode, int repeatCount, int mods)
+			: KeyEvent(keycode), m_RepeatCount(repeatCount), m_Mods(mods) {}
 
 		inline int GetRepeatCount() const { return m_RepeatCount; }
-		inline int GetMods() const { return 0; } // Placeholder for modifier keys
-
+		inline int GetMods() const { return m_Mods; }
 		std::string ToString() const override
 		{
 			std::stringstream ss;
@@ -37,6 +36,7 @@ namespace PulseStudio {
 		EVENT_CLASS_TYPE(KeyPressed)
 	private:
 		int m_RepeatCount;
+		int m_Mods;
 	};
 
 	class KeyReleasedEvent : public KeyEvent

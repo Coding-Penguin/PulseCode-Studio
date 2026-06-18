@@ -8,6 +8,7 @@
 
 #include "PulseStudio/FontManager.h"
 #include "HighLight.h"
+#include "PulseStudio/Events/MouseEvent.h"
 
 namespace PulseStudio {
 
@@ -22,6 +23,12 @@ namespace PulseStudio {
 		m_BoldFont = FontManager::Get().GetFont("Editor", FontStyle::Bold);
 		m_ItalicFont = FontManager::Get().GetFont("Editor", FontStyle::Italic);
 		m_BoldItalicFont = FontManager::Get().GetFont("Editor", FontStyle::BoldItalic);
+	}
+
+	EditorView& EditorView::Get()
+	{
+		static EditorView instance;
+		return instance;
 	}
 
 	void EditorView::SetBounds(float x, float y, float w, float h)
@@ -68,11 +75,14 @@ namespace PulseStudio {
 		if (!m_RegularFont || !m_RegularFont->IsInitialized()) return;
 		if (m_W <= 0 || m_H <= 0) return;
 
+		bool needScrollbar = (totalHeight > m_H);
+		int scissorW = (int)m_W - (needScrollbar ? (int)m_ScrollbarWidth : 0);
+		if (scissorW <= 0) scissorW = (int)m_W;
+
 		Application& app = Application::Get();
 		int winHeight = app.GetWindow().GetHeight();
 		int scissorX = (int)m_X;
 		int scissorY = winHeight - (int)(m_Y + m_H);
-		int scissorW = (int)m_W;
 		int scissorH = (int)m_H;
 		glEnable(GL_SCISSOR_TEST);
 		glScissor(scissorX, scissorY, scissorW, scissorH);
@@ -90,6 +100,7 @@ namespace PulseStudio {
 		CursorPosition pos = cursor.GetPosition();
 		FindMatchingBracket(buffer, pos.line, pos.col);
 
+		UpdateLineNumberWidth(buffer);
 		DrawLineNumbers(firstLine, lastLine, startY);
 		DrawSelection(buffer, cursor, firstLine, lastLine, startY);
 		DrawMatchingBracket(buffer, firstLine, lastLine, startY);
@@ -107,7 +118,15 @@ namespace PulseStudio {
 				DrawCursor(cursor, cursorX, cursorY);
 			}
 		}
+
 		glDisable(GL_SCISSOR_TEST);
+		if (needScrollbar)
+		{
+			glPushAttrib(GL_ENABLE_BIT);
+			glDisable(GL_BLEND);
+			DrawVerticalScrollbar();
+			glPopAttrib();
+		}
 	}
 
 	void EditorView::DrawLineNumbers(int firstLine, int lastLine, float startY)
@@ -181,11 +200,11 @@ namespace PulseStudio {
 
 	void EditorView::DrawCursor(const Cursor& cursor, float cursorX, float cursorY)
 	{
-		glColor4f(1.0f, 1.0f, 1.0f, 0.8f);
+		glColor4f(1.0f, 1.0f, 1.0f, 0.7f);
 		glLineWidth(2.0f);
 		glBegin(GL_LINES);
 		glVertex2f(cursorX, cursorY);
-		glVertex2f(cursorX, cursorY + m_LineHeight);
+		glVertex2f(cursorX, cursorY + m_LineHeight - 2);
 		glEnd();
 	}
 
@@ -218,6 +237,7 @@ namespace PulseStudio {
 		int firstLine, int lastLine, float startY)
 	{
 		if (!cursor.HasSelection()) return;
+		
 		int selStartLine, selStartCol, selEndLine, selEndCol;
 		cursor.GetSelectionRange(selStartLine, selStartCol, selEndLine, selEndCol);
 
@@ -420,10 +440,125 @@ namespace PulseStudio {
 			m_ScrollY = cursorY + m_LineHeight - m_H;
 		}
 
-		// Horizontal scroll
-		// ...
+		// Horizontal scroll...
 
 		ClampScroll();
+	}
+
+	float EditorView::GetScrollbarThumbHeight() const
+	{
+		float totalHeight = m_buffer.GetLineCount() * m_LineHeight;
+		if (totalHeight <= m_H) return m_H;
+		float visibleRatio = m_H / totalHeight;
+		float thumbHeight = m_H * visibleRatio;
+		return std::max(thumbHeight, m_ScrollbarMinThumbHeight);
+	}
+
+	float EditorView::GetScrollbarThumbY() const
+	{
+		float totalHeight = m_buffer.GetLineCount() * m_LineHeight;
+		if (totalHeight <= m_H) return m_Y;
+		float maxScrollY = totalHeight - m_H;
+		float scrollRatio = m_ScrollY / maxScrollY;
+		float trackHeight = m_H - GetScrollbarThumbHeight();
+		return m_Y + scrollRatio * trackHeight;
+	}
+
+	void EditorView::DrawVerticalScrollbar()
+	{
+		float x = m_X + m_W - m_ScrollbarWidth;
+		float y = m_Y;
+		float w = m_ScrollbarWidth;
+		float h = m_H;
+
+		if (ThemeManager::IsDarkTheme)
+			glColor4f(0.2f, 0.2f, 0.22f, 1.0f);
+		else
+			glColor4f(0.8f, 0.8f, 0.82f, 1.0f);
+		glBegin(GL_QUADS);
+		glVertex2f(x, y);
+		glVertex2f(x + w, y);
+		glVertex2f(x + w, y + h);
+		glVertex2f(x, y + h);
+		glEnd();
+
+		float thumbY = GetScrollbarThumbY();
+		float thumbH = GetScrollbarThumbHeight();
+		glColor4f(0.5f, 0.5f, 0.5f, 0.9f);
+		glBegin(GL_QUADS);
+		glVertex2f(x, thumbY);
+		glVertex2f(x + w, thumbY);
+		glVertex2f(x + w, thumbY + thumbH);
+		glVertex2f(x, thumbY + thumbH);
+		glEnd();
+	}
+
+	bool EditorView::OnMouseButton(MouseButtonPressedEvent& e, float mouseX, float mouseY)
+	{
+		if (e.GetMouseButton() != GLFW_MOUSE_BUTTON_LEFT) return false;
+
+		float totalHeight = m_buffer.GetLineCount() * m_LineHeight;
+		bool needScrollbar = (totalHeight > m_H);
+		if (needScrollbar)
+		{
+			float scrollbarX = m_X + m_W - m_ScrollbarWidth;
+			if (mouseX >= scrollbarX && mouseX <= scrollbarX + m_ScrollbarWidth &&
+				mouseY >= m_Y && mouseY <= m_Y + m_H)
+			{
+				float thumbY = GetScrollbarThumbY();
+				float thumbH = GetScrollbarThumbHeight();
+				if (mouseY >= thumbY && mouseY <= thumbY + thumbH)
+				{
+					m_IsDraggingScrollbar = true;
+					m_DragStartY = mouseY;
+					m_DragStartScrollY = m_ScrollY;
+					return true;
+				}
+				else
+				{
+					float maxScrollY = totalHeight - m_H;
+					float clickRatio = (mouseY - m_Y) / m_H;
+					float newScrollY = clickRatio * totalHeight - m_H / 2;
+					newScrollY = std::max(0.0f, std::min(maxScrollY, newScrollY));
+					m_ScrollY = newScrollY;
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	bool EditorView::OnMouseMove(MouseMovedEvent& e, float mouseX, float mouseY)
+	{
+		if (m_IsDraggingScrollbar)
+		{
+			float deltaY = mouseY - m_DragStartY;
+			float totalHeight = m_buffer.GetLineCount() * m_LineHeight;
+			float maxScrollY = totalHeight - m_H;
+			float trackHeight = m_H - GetScrollbarThumbHeight();
+			float scrollDelta = (deltaY / trackHeight) * maxScrollY;
+			m_ScrollY = m_DragStartScrollY + scrollDelta;
+			m_ScrollY = std::max(0.0f, std::min(maxScrollY, m_ScrollY));
+			return true;
+		}
+		return false;
+	}
+
+	void EditorView::OnMouseRelease()
+	{
+		m_IsDraggingScrollbar = false;
+	}
+
+	void EditorView::UpdateLineNumberWidth(const TextBuffer& buffer)
+	{
+		int maxLines = buffer.GetLineCount();
+		std::string maxLineNumStr = std::to_string(maxLines);
+
+		float maxWidth = m_RegularFont ? m_RegularFont->GetTextWidth(maxLineNumStr) : 0;
+
+		float newWidth = maxWidth + 10.0f;
+
+		m_LineNumberWidth = std::max(newWidth, 30.0f);
 	}
 
 }

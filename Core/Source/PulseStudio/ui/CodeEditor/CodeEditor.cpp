@@ -4,6 +4,7 @@
 #include <fstream>
 #include <sstream>
 #include "PulseStudio/Application.h"
+#include "EditorView.h"
 
 #include <GLFW/glfw3.h>
 
@@ -14,6 +15,8 @@ namespace PulseStudio {
 		m_Buffer.LoadFromString("");
 		m_Cursor.MoveTo(0, 0);
 		m_Highlighter.SetLanguage(Language::CPP);
+
+		m_View = &EditorView::Get();
 
 		GLFWwindow* window = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
 		m_ArrowCursor = glfwCreateStandardCursor(GLFW_ARROW_CURSOR);
@@ -28,14 +31,7 @@ namespace PulseStudio {
 
 	void CodeEditor::OnUpdate(float deltaTime)
 	{
-		float contentX = 0.0f;
-		float contentY = 105.0f;
-		Application& app = Application::Get();
-		float contentW = app.GetWindow().GetWidth();
-		float contentH = app.GetWindow().GetHeight() - contentY;
-		m_View.SetBounds(contentX, contentY, contentW, contentH);
-
-		m_View.Render(m_Buffer, m_Cursor, m_Highlighter, deltaTime);
+		m_View->Render(m_Buffer, m_Cursor, m_Highlighter, deltaTime);
 	}
 
 	bool CodeEditor::OnEvent(Event& event)
@@ -54,12 +50,17 @@ namespace PulseStudio {
 		{
 			MouseButtonPressedEvent& e = (MouseButtonPressedEvent&)event;
 			float mx = e.GetMouseX(), my = e.GetMouseY();
+			if (m_View->OnMouseButton(e, mx, my))
+			{
+				return true;
+			}
+
 			if (e.GetMouseButton() == GLFW_MOUSE_BUTTON_LEFT)
 			{
-				bool inContent = (mx >= m_View.GetX() && mx <= m_View.GetX() + m_View.GetWidth() && my >= m_View.GetY() + 30 && my <= m_View.GetY() + m_View.GetHeight());
+				bool inContent = (mx >= m_View->GetX() && mx <= m_View->GetX() + m_View->GetWidth() && my >= m_View->GetY() && my <= m_View->GetY() + m_View->GetHeight());
 				if (inContent)
 				{
-					CursorPosition pos = m_View.ScreenToTextPosition(mx, my, m_Buffer);
+					CursorPosition pos = m_View->ScreenToTextPosition(mx, my, m_Buffer);
 					m_Cursor.SetPosition(pos.line, pos.col);
 					m_Cursor.StartSelection();
 					m_MouseDragSelecting = true;
@@ -73,23 +74,31 @@ namespace PulseStudio {
 		{
 			MouseMovedEvent& e = (MouseMovedEvent&)event;
 			float mx = e.GetX(), my = e.GetY();
+			if (m_View->OnMouseMove(e, mx, my))
+			{
+				return true;
+			}
 
-			float viewX = m_View.GetX();
-			float viewY = m_View.GetY();
-			float viewW = m_View.GetWidth();
-			float viewH = m_View.GetHeight();
+			float viewX = m_View->GetX();
+			float viewY = m_View->GetY();
+			float viewW = m_View->GetWidth();
+			float viewH = m_View->GetHeight();
 
 			bool inContent = (mx >= viewX && mx <= viewX + viewW && my >= viewY && my <= viewY + viewH);
 
 			GLFWwindow* window = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
 			if (inContent)
+			{
 				glfwSetCursor(window, m_IBeamCursor);
+			}
 			else
+			{
 				glfwSetCursor(window, m_ArrowCursor);
+			}
 
 			if (m_MouseDragSelecting)
 			{
-				CursorPosition pos = m_View.ScreenToTextPosition(mx, my, m_Buffer);
+				CursorPosition pos = m_View->ScreenToTextPosition(mx, my, m_Buffer);
 				m_Cursor.SetPosition(pos.line, pos.col);
 				return true;
 			}
@@ -99,17 +108,17 @@ namespace PulseStudio {
 		if (event.GetEventType() == EventType::MouseButtonReleased)
 		{
 			MouseButtonReleasedEvent& e = (MouseButtonReleasedEvent&)event;
+			m_View->OnMouseRelease();
 			if (e.GetMouseButton() == GLFW_MOUSE_BUTTON_LEFT && m_MouseDragSelecting)
 			{
 				m_MouseDragSelecting = false;
-				m_Cursor.EndSelection();
 				return true;
 			}
 		}
 		if (event.GetEventType() == EventType::MouseScrolled)
 		{
 			MouseScrolledEvent& e = (MouseScrolledEvent&)event;
-			m_View.HandleScroll(e.GetXOffset() * 20.0f, -e.GetYOffset() * 20.0f);
+			m_View->HandleScroll(e.GetXOffset() * 20.0f, -e.GetYOffset() * 20.0f);
 			return true;
 		}
 		return false;
@@ -146,7 +155,7 @@ namespace PulseStudio {
 	{
 		m_Buffer.LoadFromString(text);
 		m_Cursor.MoveTo(0, 0);
-		m_View.HandleScroll(0, 0);
+		m_View->HandleScroll(0, 0);
 	}
 
 	std::string CodeEditor::GetText() const
@@ -176,6 +185,23 @@ namespace PulseStudio {
 		if ((mods & GLFW_MOD_CONTROL) && key == GLFW_KEY_V)
 		{
 			Paste();
+			return;
+		}
+		if ((mods & GLFW_MOD_CONTROL) && key == GLFW_KEY_Z)
+		{
+			Undo();
+			return;
+		}
+		if ((mods & GLFW_MOD_CONTROL) && key == GLFW_KEY_Y)
+		{
+			Redo();
+			return;
+		}
+		if ((mods & GLFW_MOD_CONTROL) && key == GLFW_KEY_A)
+		{
+			m_Cursor.SetPosition(0, 0);
+			m_Cursor.StartSelection();
+			m_Cursor.SetPosition(m_Buffer.GetLineCount() - 1, m_Buffer.GetLineLength(m_Buffer.GetLineCount() - 1));
 			return;
 		}
 
@@ -220,11 +246,15 @@ namespace PulseStudio {
 			{
 				if (pos.col > 0)
 				{
+					char deleted = m_Buffer.GetLine(pos.line)[pos.col - 1];
+					RecordDelete(pos.line, pos.col - 1, deleted);
 					m_Buffer.DeleteChar(pos.line, pos.col - 1);
 					m_Cursor.Move(0, -1, m_Buffer, mods & GLFW_MOD_SHIFT);
 				}
 				else if (pos.line > 0)
 				{
+					std::string nextLine = m_Buffer.GetLine(pos.line);
+					RecordDeleteNewline(pos.line - 1, m_Buffer.GetLineLength(pos.line - 1), nextLine);
 					int prevLine = pos.line - 1;
 					int prevCol = m_Buffer.GetLineLength(prevLine);
 					std::string currentLine = m_Buffer.GetLine(pos.line);
@@ -239,20 +269,51 @@ namespace PulseStudio {
 			CursorPosition pos = m_Cursor.GetPosition();
 			if (pos.col < m_Buffer.GetLineLength(pos.line))
 			{
+				char deleted = m_Buffer.GetLine(pos.line)[pos.col];
+				RecordDelete(pos.line, pos.col, deleted);
 				m_Buffer.DeleteChar(pos.line, pos.col);
 			}
 			else if (pos.line + 1 < m_Buffer.GetLineCount())
 			{
 				std::string nextLine = m_Buffer.GetLine(pos.line + 1);
+				RecordDeleteNewline(pos.line, pos.col, nextLine);
 				m_Buffer.SetLine(pos.line, m_Buffer.GetLine(pos.line) + nextLine);
 				m_Buffer.DeleteRange(pos.line + 1, 0, pos.line + 2, 0);
 			}
 		}
 		else if (key == GLFW_KEY_ENTER)
 		{
+			m_Cursor.EndSelection();
 			CursorPosition pos = m_Cursor.GetPosition();
-			m_Buffer.InsertNewline(pos.line, pos.col);
-			m_Cursor.MoveTo(pos.line + 1, 0);
+			std::string currentLine = m_Buffer.GetLine(pos.line);
+			RecordInsertNewline(pos.line, pos.col);
+
+			int indentSize = 0;
+			while (indentSize < (int)currentLine.size() && (currentLine[indentSize] == ' ' || currentLine[indentSize] == '\t'))
+			{
+				indentSize++;
+			}
+			std::string indent = currentLine.substr(0, indentSize);
+
+			bool shouldIncrease = false;
+			if (pos.col == (int)currentLine.size() && !currentLine.empty() && currentLine.back() == '{')
+			{
+				shouldIncrease = true;
+			}
+
+			std::string leftPart = currentLine.substr(0, pos.col);
+			std::string rightPart = currentLine.substr(pos.col);
+			m_Buffer.SetLine(pos.line, leftPart);
+
+			std::string newIndent = indent;
+			if (shouldIncrease)
+			{
+				newIndent += "    ";
+			}
+			std::string newLine = newIndent + rightPart;
+			m_Buffer.InsertLine(pos.line + 1, newLine);
+
+			m_Cursor.MoveTo(pos.line + 1, (int)newIndent.size());
 		}
 		else if (key == GLFW_KEY_TAB)
 		{
@@ -266,20 +327,17 @@ namespace PulseStudio {
 		unsigned int ch = e.GetCharCode();
 		if (ch >= 32 && ch <= 126)
 		{
-			if (m_Cursor.HasSelection())
+			if (m_Cursor.HasSelection()) 
 			{
 				DeleteSelection();
 			}
-			KeyPressedEvent& e = *new KeyPressedEvent(ch, 0);
-			int mods = e.GetMods();
 			CursorPosition pos = m_Cursor.GetPosition();
+			RecordInsert(pos.line, pos.col, (char)ch);
 			if (ch == '(' || ch == '[' || ch == '{')
 			{
 				char right = (ch == '(' ? ')' : (ch == '[' ? ']' : '}'));
-
 				const std::string& line = m_Buffer.GetLine(pos.line);
 				bool nextIsMatching = (pos.col < (int)line.size() && line[pos.col] == right);
-
 				m_Buffer.InsertChar(pos.line, pos.col, (char)ch);
 				if (!nextIsMatching)
 				{
@@ -301,7 +359,7 @@ namespace PulseStudio {
 		if (e.GetMouseButton() != GLFW_MOUSE_BUTTON_LEFT) return;
 		float mx = e.GetMouseX();
 		float my = e.GetMouseY();
-		CursorPosition pos = m_View.ScreenToTextPosition(mx, my, m_Buffer);
+		CursorPosition pos = m_View->ScreenToTextPosition(mx, my, m_Buffer);
 		m_Cursor.SetPosition(pos.line, pos.col);
 	}
 
@@ -337,6 +395,7 @@ namespace PulseStudio {
 
 	void CodeEditor::Copy()
 	{
+		bool hasSel = m_Cursor.HasSelection();
 		std::string text = GetSelectedText();
 		if (!text.empty())
 		{
@@ -355,6 +414,7 @@ namespace PulseStudio {
 	{
 		GLFWwindow* win = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
 		const char* clipText = glfwGetClipboardString(win);
+		PS_CORE_INFO("Paste: clipboard text = '{}'", clipText ? clipText : "(null)");
 		if (clipText)
 		{
 			ReplaceSelection(clipText);
@@ -412,6 +472,126 @@ namespace PulseStudio {
 			}
 			m_Cursor.SetPosition(pos.line, pos.col);
 		}
+	}
+
+	void CodeEditor::ClearRedoStack()
+	{
+		while (!m_RedoStack.empty()) m_RedoStack.pop();
+	}
+
+	void CodeEditor::RecordAction(const UndoAction& action)
+	{
+		m_UndoStack.push(action);
+		ClearRedoStack();
+	}
+
+	void CodeEditor::RecordInsert(int line, int col, char ch)
+	{
+		UndoAction action;
+		action.type = UndoAction::Insert;
+		action.line = line;
+		action.col = col;
+		action.data = std::string(1, ch);
+		RecordAction(action);
+	}
+
+	void CodeEditor::RecordDelete(int line, int col, char ch)
+	{
+		UndoAction action;
+		action.type = UndoAction::Delete;
+		action.line = line;
+		action.col = col;
+		action.data = std::string(1, ch);
+		RecordAction(action);
+	}
+
+	void CodeEditor::RecordInsertNewline(int line, int col)
+	{
+		UndoAction action;
+		action.type = UndoAction::InsertNewline;
+		action.line = line;
+		action.col = col;
+		RecordAction(action);
+	}
+
+	void CodeEditor::RecordDeleteNewline(int line, int col, const std::string& nextLineContent)
+	{
+		UndoAction action;
+		action.type = UndoAction::DeleteNewline;
+		action.line = line;
+		action.col = col;
+		action.data = nextLineContent;
+		RecordAction(action);
+	}
+
+	void CodeEditor::Undo()
+	{
+		if (m_UndoStack.empty()) return;
+		UndoAction action = m_UndoStack.top();
+		m_UndoStack.pop();
+
+		switch (action.type)
+		{
+		case UndoAction::Insert:
+			m_Buffer.DeleteChar(action.line, action.col);
+			m_Cursor.SetPosition(action.line, action.col);
+			break;
+		case UndoAction::Delete:
+			m_Buffer.InsertChar(action.line, action.col, action.data[0]);
+			m_Cursor.SetPosition(action.line, action.col + 1);
+			break;
+		case UndoAction::InsertNewline:
+		{
+			std::string nextLine = m_Buffer.GetLine(action.line + 1);
+			m_Buffer.SetLine(action.line, m_Buffer.GetLine(action.line) + nextLine);
+			m_Buffer.DeleteLine(action.line + 1);
+			m_Cursor.SetPosition(action.line, action.col);
+		}
+		break;
+		case UndoAction::DeleteNewline:
+		{
+			std::string currentLine = m_Buffer.GetLine(action.line);
+			std::string left = currentLine.substr(0, action.col);
+			std::string right = currentLine.substr(action.col);
+			m_Buffer.SetLine(action.line, left);
+			m_Buffer.InsertLine(action.line + 1, right);
+			m_Cursor.SetPosition(action.line + 1, 0);
+		}
+		break;
+		}
+		m_RedoStack.push(action);
+	}
+
+	void CodeEditor::Redo() 
+	{
+		if (m_RedoStack.empty()) return;
+		UndoAction action = m_RedoStack.top();
+		m_RedoStack.pop();
+
+		switch (action.type)
+		{
+		case UndoAction::Insert:
+			m_Buffer.InsertChar(action.line, action.col, action.data[0]);
+			m_Cursor.SetPosition(action.line, action.col + 1);
+			break;
+		case UndoAction::Delete:
+			m_Buffer.DeleteChar(action.line, action.col);
+			m_Cursor.SetPosition(action.line, action.col);
+			break;
+		case UndoAction::InsertNewline:
+			m_Buffer.InsertNewline(action.line, action.col);
+			m_Cursor.SetPosition(action.line + 1, 0);
+			break;
+		case UndoAction::DeleteNewline:
+		{
+			std::string nextLine = m_Buffer.GetLine(action.line + 1);
+			m_Buffer.SetLine(action.line, m_Buffer.GetLine(action.line) + nextLine);
+			m_Buffer.DeleteLine(action.line + 1);
+			m_Cursor.SetPosition(action.line, action.col);
+		}
+		break;
+		}
+		m_UndoStack.push(action);
 	}
 
 }

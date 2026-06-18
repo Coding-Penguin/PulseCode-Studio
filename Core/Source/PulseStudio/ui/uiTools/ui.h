@@ -4,6 +4,8 @@
 #include "uiButton.h"
 #include "uiTitleBar.h"
 #include "uiStatusBar.h"
+#include "uiShortcutBar.h"
+#include "uiComboBox.h"
 
 #include "MouseCircle.h"
 

@@ -13,6 +13,15 @@ namespace PulseStudio {
 		TopLeft, TopRight, BottomLeft, BottomRight
 	};
 
+	enum class DockRegion
+	{
+		Left,
+		Right,
+		Bottom,
+		Center,
+		None
+	};
+
 	class uiWindow : public Layer
 	{
 	public:
@@ -41,12 +50,33 @@ namespace PulseStudio {
 		int GetWidth() const { return (int)m_RectWidth; }
 		int GetHeight() const { return (int)m_RectHeight; }
 
-		void SetDraggable(bool draggable) { m_IsDraggable = draggable; }
-		void SetResizable(bool resizable) { m_IsResizable = resizable; }
-	private:
-		bool m_IsDraggable = true;
-		bool m_IsResizable = true;
+		void SetDocked(bool docked) { m_IsDocked = docked; }
+		bool IsDocked() const { return m_IsDocked; }
 
+		static void InitDockSystem(float x, float y, float w, float h);
+		static void OnWindowResize(int width, int height);
+		static bool OnDockEvent(Event& event);
+
+		static void AddWindowToRegion(uiWindow* window, DockRegion region);
+		static void RemoveWindowFromDock(uiWindow* window);
+		static void StopDragging();
+
+		void SetDockRegion(DockRegion region) { m_DockRegion = region; }
+		DockRegion GetDockRegion() const { return m_DockRegion; }
+		void SetAutoHide(bool autoHide) { m_AutoHide = autoHide; }
+		bool IsAutoHide() const { return m_AutoHide; }
+		void SetFloating(bool floating) { m_IsFloating = floating; }
+		bool IsFloating() const { return m_IsFloating; }
+
+		void StartDrag(float mouseX, float mouseY);
+		void OnDragMove(float mouseX, float mouseY);
+		void EndDrag();
+
+		static void DockWindow(uiWindow* window, DockRegion region);
+		static void DrawDockAreas();
+		static void DrawDockArea(DockRegion region);
+		static void UpdateDockLayout();
+	private:
 		std::string m_name = "uiWindow";
 		float m_RectX = 100.0f;
 		float m_RectY = 150.0f;
@@ -64,6 +94,7 @@ namespace PulseStudio {
 
 		float m_CloseButtonSize = 20.0f;
 		bool m_IsDragging = false;
+		bool m_IsDocked = false;
 		float m_DragStartX = 0.0f, m_DragStartY = 0.0f;
 		float m_WindowStartX = 0.0f, m_WindowStartY = 0.0f;
 		bool m_IsVisible = true;
@@ -71,6 +102,46 @@ namespace PulseStudio {
 		bool m_IsDarkTheme = true;
 
 		std::vector<uiButton*> m_Buttons;
+
+		struct DockArea
+		{
+			DockRegion region;
+			std::vector<uiWindow*> windows;
+			uiWindow* activeWindow = nullptr;
+			float x, y, w, h;
+			float tabHeight = 25.0f;
+		};
+
+		static std::unordered_map<DockRegion, DockArea> s_DockAreas;
+		static std::vector<uiWindow*> s_FloatingWindows;
+		static uiWindow* s_DraggingWindow;
+		static DockRegion s_PreviewRegion;
+		static float s_MainX, s_MainY, s_MainW, s_MainH;
+		static float s_DragStartX, s_DragStartY;
+
+		DockRegion m_DockRegion = DockRegion::None;
+		bool m_AutoHide = false;
+		bool m_IsFloating = false;
+
+		bool m_IsDraggingForDock = false;
+
+		static std::unordered_map<DockRegion, uiWindow*> s_DockedWindows;
+
+		static bool s_IsDraggingLeftSplit;
+		static bool s_IsDraggingRightSplit;
+		static float s_LeftSplitStartX;
+		static float s_RightSplitStartX;
+		static float s_LeftWidth;
+		static float s_RightWidth;
+		static float s_BottomHeight;
+		static void OnMouseMoveForSplit(float mx, float my);
+		static void OnMouseButtonForSplit(int button, int action, float mx, float my);
+
+		static DockRegion DetectDockTarget(float mx, float my);
+		static void UndockWindow(uiWindow* window);
+		static void ToggleAutoHide(uiWindow* window);
+		static bool HandleDockAreaEvent(DockArea& area, Event& event);
+		static void DockWindowToRegion(uiWindow* window, DockRegion region);
 
 		void DrawTitle() const;
 		bool IsInResizeZone(float mx, float my) const;

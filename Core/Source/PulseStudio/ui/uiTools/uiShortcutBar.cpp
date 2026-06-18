@@ -5,6 +5,7 @@
 #include <glad/glad.h>
 #include "PulseStudio/Log.h"
 #include "PulseStudio/Events/Event.h"
+#include "MouseCircle.h"
 
 namespace PulseStudio {
 
@@ -25,7 +26,10 @@ namespace PulseStudio {
 
 	void uiShortcutBar::OnUpdate(float deltaTime)
 	{
-		// No dynamic updates needed for now
+		for (auto& btn : m_Buttons)
+		{
+			btn->OnTooltipUpdate(deltaTime);
+		}
 	}
 
 	bool uiShortcutBar::OnEvent(Event& event)
@@ -57,6 +61,10 @@ namespace PulseStudio {
 	{
 		m_Buttons.clear();
 		m_GroupEndX.clear();
+		for (auto& group : m_Groups)
+		{
+			group.buttons.clear();
+		}
 		float x = 10.0f;
 		float y = m_OffsetY + (m_BarHeight - m_ButtonHeight) / 2.0f;
 		float width = m_ButtonWidth;
@@ -69,11 +77,10 @@ namespace PulseStudio {
 			auto& group = m_Groups[g];
 			for (auto& item : group.items)
 			{
-				auto btn = std::make_unique<uiButton>(item.text, x, y, width, height, ButtonStyles::Normal);
-				btn->SetCallback([callback = item.callback]()
-					{
-					if (callback) callback();
-					});
+				auto btn = std::make_unique<uiButton>(item.text, x, y, width, height, ButtonStyles::NoBackgroundOrLine);
+				btn->SetCallback([callback = item.callback]() { if (callback) callback(); });
+				btn->SetTooltip(item.tooltip);
+				group.buttons.push_back(btn.get());
 				m_Buttons.push_back(std::move(btn));
 				x += width + padding;
 			}
@@ -119,6 +126,7 @@ namespace PulseStudio {
 		for (auto& btn : m_Buttons)
 		{
 			btn->OnUpdate(0, 0, true);
+			btn->DrawTooltip(0, 0);
 		}
 	}
 

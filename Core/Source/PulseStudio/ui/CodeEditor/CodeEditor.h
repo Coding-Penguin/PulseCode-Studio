@@ -31,17 +31,40 @@ namespace PulseStudio {
 		bool HasSelection() const { return m_Cursor.HasSelection(); }
 		std::string GetSelectedText() const;
 		void DeleteSelection();
+
+		void SetViewBounds(float x, float y, float w, float h) { m_View->SetBounds(x, y, w, h); }
 	private:
 		TextBuffer m_Buffer;
 		Cursor m_Cursor;
 		Highlight m_Highlighter;
-		EditorView m_View;
+		EditorView* m_View;
 
 		GLFWcursor* m_ArrowCursor;
 		GLFWcursor* m_IBeamCursor;
 
 		bool m_MouseDragSelecting = false;
 		CursorPosition m_MouseDragStart;
+
+		struct UndoAction 
+		{
+			enum Type { Insert, Delete, InsertNewline, DeleteNewline };
+			Type type;
+			int line, col;
+			std::string data;
+			int endLine, endCol;
+		};
+		std::stack<UndoAction> m_UndoStack;
+		std::stack<UndoAction> m_RedoStack;
+
+		void RecordAction(const UndoAction& action);
+		void Undo();
+		void Redo();
+		void ClearRedoStack();
+
+		void RecordInsert(int line, int col, char ch);
+		void RecordDelete(int line, int col, char ch);
+		void RecordInsertNewline(int line, int col);
+		void RecordDeleteNewline(int line, int col, const std::string& nextLineContent);
 
 		void ProcessKeyEvent(KeyPressedEvent& e);
 		void ProcessCharEvent(CharEvent& e);

@@ -62,9 +62,9 @@ namespace PulseStudio {
 			{
 				m_Theme = Theme::Moonlight;
 			}
-			else if (m_ThemeName == "Forest")
+			else if (m_ThemeName == "Hacker")
 			{
-				m_Theme = Theme::Forest;
+				m_Theme = Theme::Hacker;
 			}
 			else if (m_ThemeName == "Grape")
 			{

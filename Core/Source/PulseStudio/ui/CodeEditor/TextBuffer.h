@@ -18,6 +18,10 @@ namespace PulseStudio {
         const std::string& GetLine(int line) const { return m_Lines[line]; }
         void SetLine(int line, const std::string& newText) { m_Lines[line] = newText; }
 
+        void InsertLine(int line, const std::string& content);
+
+        void DeleteLine(int line);
+
         int GetLineLength(int line) const { return (int)m_Lines[line].size(); }
     private:
         std::vector<std::string> m_Lines;
