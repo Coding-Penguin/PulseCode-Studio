@@ -3,20 +3,16 @@
 namespace PulseStudio
 {
 
-	enum class Theme // 10 items
+	enum class Theme // 6 items
 	{
 		// Light
 		Light = 0,
 		Cool_Breeze,
 		Icy_Mint,
-		Sand,
-		Ice,
 		// Dark
 		Dark,
 		Cool_Slate,
-		Moonlight,
-		Hacker,
-		Grape
+		Moonlight
 	};
 
 	class ThemeManager
@@ -24,7 +20,7 @@ namespace PulseStudio
 	public:
 		static Theme GetCurrentTheme() { return s_CurrentTheme; }
 		static void SetTheme(Theme theme) { s_CurrentTheme = theme; }
-		static bool IsDarkTheme() { return (s_CurrentTheme == Theme::Dark || s_CurrentTheme == Theme::Cool_Slate || s_CurrentTheme == Theme::Moonlight || s_CurrentTheme == Theme::Hacker || s_CurrentTheme == Theme::Grape); }
+		static bool IsDarkTheme() { return (s_CurrentTheme == Theme::Dark || s_CurrentTheme == Theme::Cool_Slate || s_CurrentTheme == Theme::Moonlight); }
 	private:
 		ThemeManager() = default;
 

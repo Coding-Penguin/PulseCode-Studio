@@ -11,11 +11,22 @@
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
 
+#include "Search.h"
+
 namespace PulseStudio
 {
 
 	uiTitleBar::uiTitleBar()
 	{
+		float btnWidth = 40.0f;
+		float btnHeight = 40.0f;
+		float y = 0;
+		float rightMargin = 0;
+		float startX = Application::Get().GetWindow().GetWidth() - 3 * btnWidth - rightMargin;
+
+		m_MinimizeRect = { startX, y, btnWidth, btnHeight };
+		m_MaximizeRect = { startX + btnWidth, y, btnWidth, btnHeight };
+		m_CloseRect = { startX + 2 * btnWidth, y, btnWidth, btnHeight };
 	}
 	uiTitleBar::~uiTitleBar()
 	{
@@ -31,7 +42,7 @@ namespace PulseStudio
 		auto addTitleButton = [&](const std::string& text, float width)
 			{
 				auto btn = std::make_unique<uiButton>(text, x, y, width, 30, ButtonStyles::NoBackgroundOrLine);
-				btn->SetCallback([=]() { PS_INFO(std::format("Clicked \"{}\"", text)); });
+				btn->SetCallback([=]() { PS_INFO("Clicked \"{}\"", text); });
 				m_Buttons.push_back(std::move(btn));
 				x += width + 10;
 			};
@@ -45,7 +56,15 @@ namespace PulseStudio
 		addTitleButton("Tools", 75);
 		addTitleButton("Help", 70);
 		x += 30;
-		addTitleButton("Search...", 130);
+
+		auto addSearchButton = [&](const std::string& text, float width)
+			{
+				auto btn = std::make_unique<uiButton>(text, x, y, width, 30, ButtonStyles::NoBackgroundOrLine);
+				btn->SetCallback([=]() { PS_INFO("Clicked \"{}\"", text); });
+				m_Buttons.push_back(std::move(btn));
+				x += width + 10;
+			};
+		addSearchButton("Search...", 130);
 	}
 
 	void uiTitleBar::OnDetach()
@@ -264,7 +283,11 @@ namespace PulseStudio
 		float left = x + w * 0.2f;
 		float right = x + w * 0.8f;
 
-		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+		if (ThemeManager::IsDarkTheme())
+			glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+		else
+			glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
+
 		glLineWidth(2.0f);
 		glBegin(GL_LINES);
 		glVertex2f(left, lineY);
@@ -283,7 +306,11 @@ namespace PulseStudio
 		glVertex2f(x + w, y + h); glVertex2f(x, y + h);
 		glEnd();
 
-		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+		if (ThemeManager::IsDarkTheme())
+			glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+		else
+			glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
+
 		glLineWidth(2.0f);
 
 		float margin;
@@ -361,7 +388,11 @@ namespace PulseStudio
 		float top = y + margin;
 		float bottom = y + h - margin;
 
-		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+		if (ThemeManager::IsDarkTheme())
+			glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+		else
+			glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
+
 		glLineWidth(2.0f);
 		glBegin(GL_LINES);
 		glVertex2f(left, top);

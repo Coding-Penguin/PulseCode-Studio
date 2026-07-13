@@ -27,7 +27,7 @@ namespace PulseStudio {
 
 	static void GLFWErrorCallback(int error, const char* description)
 	{
-		PS_CORE_ERROR(std::format("GLFW Error ({0}): {1}", error, description));
+		PS_CORE_ERROR("GLFW Error ({0}): {1}", error, description);
 	}
 
 	LinuxWindow::LinuxWindow(const WindowProps& props)
@@ -54,7 +54,7 @@ namespace PulseStudio {
 		m_CursorNWSE = glfwCreateStandardCursor(GLFW_RESIZE_NWSE_CURSOR);
 		m_CursorNESW = glfwCreateStandardCursor(GLFW_RESIZE_NESW_CURSOR);
 
-		PS_CORE_INFO(std::format("Creating window {0} ({1}, {2})", props.Title, props.Width, props.Height));
+		PS_CORE_INFO("Creating window {0} ({1}, {2})", props.Title, props.Width, props.Height);
 
 		if (!s_GLFWInitialized)
 		{
@@ -77,7 +77,10 @@ namespace PulseStudio {
 		glfwSetWindowUserPointer(m_Window, &m_Data);
 		SetVSync(true);
 
-		SetWindowIcon(m_Window, "H:/Projects/CppProject/Pulse-Studio/Core/Resources/Images/logo.contrast-white_scale-400.png");
+		if (ThemeManager::IsDarkTheme())
+			SetWindowIcon(m_Window, "H:/Projects/CppProject/Pulse-Studio/Core/Resources/Images/PulseStudio_500x500_White.png");
+		else
+			SetWindowIcon(m_Window, "H:/Projects/CppProject/Pulse-Studio/Core/Resources/Images/PulseStudio_500x500_Black.png");
 
 		// Set GLFW callbacks
 		glfwSetWindowSizeCallback(m_Window, [](GLFWwindow* window, int width, int height)

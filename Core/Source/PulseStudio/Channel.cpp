@@ -3,6 +3,5 @@
 
 namespace PulseStudio
 {
-	Settings s_ChannelSettings;
-	Channel ChannelManager::s_Channel = s_ChannelSettings.GetChannel();
+	Channel ChannelManager::s_Channel = Channel::Current;
 }

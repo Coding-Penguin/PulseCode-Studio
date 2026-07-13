@@ -23,13 +23,20 @@ namespace PulseStudio {
 	float uiWindow::s_MainX = 0, uiWindow::s_MainY = 0, uiWindow::s_MainW = 0, uiWindow::s_MainH = 0;
 	float uiWindow::s_DragStartX = 0, uiWindow::s_DragStartY = 0;
 	std::unordered_map<DockRegion, uiWindow::DockArea> uiWindow::s_DockAreas;
-	bool uiWindow::s_IsDraggingLeftSplit = false;
-	bool uiWindow::s_IsDraggingRightSplit = false;
-	float uiWindow::s_LeftSplitStartX = 0;
-	float uiWindow::s_RightSplitStartX = 0;
+	static uiWindow* s_FocusedWindow = nullptr;
 	float uiWindow::s_LeftWidth = 300.0f;
 	float uiWindow::s_RightWidth = 300.0f;
 	float uiWindow::s_BottomHeight = 300.0f;
+	float uiWindow::s_DynamicLeftWidth = 0.0f;
+	float uiWindow::s_DynamicRightWidth = 0.0f;
+	float uiWindow::s_DynamicBottomHeight = 0.0f;
+	bool uiWindow::s_ShowDockPanel = false;
+	DockRegion uiWindow::s_HighlightedButton = DockRegion::None;
+	float uiWindow::s_DockSpacing = 7.0f;
+	float uiWindow::s_CenterX = 0;
+	float uiWindow::s_CenterY = 0;
+	float uiWindow::s_CenterW = 0;
+	float uiWindow::s_CenterH = 0;
 
 	uiWindow::uiWindow(std::string name)
 		:m_name(name)
@@ -351,26 +358,6 @@ namespace PulseStudio {
 				float mx = e.GetMouseX();
 				float my = e.GetMouseY();
 
-				if (s_DraggingWindow == nullptr)
-				{
-					float leftSplitX = s_MainX + s_LeftWidth;
-					float rightSplitX = s_MainX + s_MainW - s_RightWidth;
-					float centerH = s_MainH - s_BottomHeight;
-					const float hitRange = 10.0f;
-					if (fabs(mx - leftSplitX) < hitRange && my >= s_MainY && my <= s_MainY + centerH)
-					{
-						s_IsDraggingLeftSplit = true;
-						s_LeftSplitStartX = mx;
-						return true;
-					}
-					else if (fabs(mx - rightSplitX) < hitRange && my >= s_MainY && my <= s_MainY + centerH)
-					{
-						s_IsDraggingRightSplit = true;
-						s_RightSplitStartX = mx;
-						return true;
-					}
-				}
-
 				bool inTitleBar = (mx >= m_RectX && mx <= m_RectX + m_RectWidth && my >= m_RectY && my <= m_RectY + 30.0f);
 
 				float closeX = m_RectX + m_RectWidth - m_CloseButtonSize - 10;
@@ -382,6 +369,26 @@ namespace PulseStudio {
 				{
 					PS_CORE_WARN("Close \"{}\" ui window!", m_name);
 					m_IsVisible = false;
+					if (m_IsDocked)
+					{
+						m_IsDocked = false;
+						for (auto& pair : s_DockedWindows)
+						{
+							if (pair.second == this)
+							{
+								pair.second = nullptr;
+								break;
+							}
+						}
+						uiWindow::UpdateDockLayout();
+					}
+					else
+					{
+						auto it = std::find(s_FloatingWindows.begin(), s_FloatingWindows.end(), this);
+						if (it != s_FloatingWindows.end())
+							s_FloatingWindows.erase(it);
+					}
+					SetDocked(false);
 					return true;
 				}
 
@@ -391,28 +398,31 @@ namespace PulseStudio {
 					return true;
 				}
 
-				ResizeEdge edge = GetResizeEdge(mx, my);
-				if (edge != ResizeEdge::None)
+				if (!m_IsDocked)
 				{
-					m_IsResizing = true;
-					m_ResizeEdge = edge;
-					m_ResizeStartX = mx;
-					m_ResizeStartY = my;
-					m_ResizeStartRectX = m_RectX;
-					m_ResizeStartRectY = m_RectY;
-					m_ResizeStartWidth = m_RectWidth;
-					m_ResizeStartHeight = m_RectHeight;
-					return true;
-				}
+					ResizeEdge edge = GetResizeEdge(mx, my);
+					if (edge != ResizeEdge::None)
+					{
+						m_IsResizing = true;
+						m_ResizeEdge = edge;
+						m_ResizeStartX = mx;
+						m_ResizeStartY = my;
+						m_ResizeStartRectX = m_RectX;
+						m_ResizeStartRectY = m_RectY;
+						m_ResizeStartWidth = m_RectWidth;
+						m_ResizeStartHeight = m_RectHeight;
+						return true;
+					}
 
-				if (IsInResizeZone(mx, my) && e.GetMouseButton() == GLFW_MOUSE_BUTTON_LEFT)
-				{
-					m_IsResizing = true;
-					m_ResizeStartX = mx;
-					m_ResizeStartY = my;
-					m_ResizeStartWidth = m_RectWidth;
-					m_ResizeStartHeight = m_RectHeight;
-					return true;
+					if (IsInResizeZone(mx, my) && e.GetMouseButton() == GLFW_MOUSE_BUTTON_LEFT)
+					{
+						m_IsResizing = true;
+						m_ResizeStartX = mx;
+						m_ResizeStartY = my;
+						m_ResizeStartWidth = m_RectWidth;
+						m_ResizeStartHeight = m_RectHeight;
+						return true;
+					}
 				}
 
 				return false;
@@ -432,12 +442,6 @@ namespace PulseStudio {
 				if (m_IsDraggingForDock)
 				{
 					OnDragMove(mx, my);
-					return true;
-				}
-
-				if (s_IsDraggingLeftSplit || s_IsDraggingRightSplit)
-				{
-					OnMouseMoveForSplit(mx, my);
 					return true;
 				}
 
@@ -588,30 +592,18 @@ namespace PulseStudio {
 	{
 		if (isDark)
 		{
-			if (ThemeManager::GetCurrentTheme() != Theme::Hacker)
-			{
-				m_Color[0] = 0.07f;
-				m_Color[1] = 0.07f;
-				m_Color[2] = 0.15f;
-				m_Color[3] = 0.7f;
+			m_Color[0] = 0.07f;
+			m_Color[1] = 0.07f;
+			m_Color[2] = 0.15f;
+			m_Color[3] = 0.7f;
 
-				m_IsDarkTheme = true;
-			}
-			else
-			{
-				m_Color[0] = 0.1f;
-				m_Color[1] = 0.14f;
-				m_Color[2] = 0.13f;
-				m_Color[3] = 0.7f;
-
-				m_IsDarkTheme = true;
-			}
+			m_IsDarkTheme = true;
 		}
 		else
 		{
-			m_Color[0] = 0.87f;
-			m_Color[1] = 0.87f;
-			m_Color[2] = 0.9f;
+			m_Color[0] = 0.93f;
+			m_Color[1] = 0.93f;
+			m_Color[2] = 1.0f;
 			m_Color[3] = 0.7f;
 
 			m_IsDarkTheme = false;
@@ -652,6 +644,12 @@ namespace PulseStudio {
 	{
 		GLFWwindow* glfwWin = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
 		GLFWcursor* cursor = nullptr;
+
+		if (m_IsDocked)
+		{
+			glfwSetCursor(glfwWin, glfwCreateStandardCursor(GLFW_ARROW_CURSOR));
+			return;
+		}
 
 		switch (edge)
 		{
@@ -721,28 +719,60 @@ namespace PulseStudio {
 
 	void uiWindow::UpdateDockLayout()
 	{
-		PS_INFO("UpdateDockLayout");
-		Application& app = Application::Get();
-		float leftW = app.GetWindow().GetWidth() * 0.2f, rightW = app.GetWindow().GetWidth() * 0.2f, bottomH = app.GetWindow().GetHeight() * 0.3f;
-		float centerW = s_MainW - leftW - rightW;
-		float centerH = s_MainH - bottomH;
+		float spacing = s_DockSpacing;
+		bool hasLeft = s_DockedWindows[DockRegion::Left] != nullptr;
+		bool hasRight = s_DockedWindows[DockRegion::Right] != nullptr;
+		bool hasBottom = s_DockedWindows[DockRegion::Bottom] != nullptr;
+		bool hasCenter = s_DockedWindows[DockRegion::Center] != nullptr;
+
+		float leftW = (s_DockedWindows[DockRegion::Left] != nullptr) ? s_LeftWidth : 0.0f;
+		float rightW = (s_DockedWindows[DockRegion::Right] != nullptr) ? s_RightWidth : 0.0f;
+		float bottomH = (s_DockedWindows[DockRegion::Bottom] != nullptr) ? s_BottomHeight : 0.0f;
+
+		float leftOffset = (leftW > 0) ? spacing : 0;
+		float rightOffset = (rightW > 0) ? spacing : 0;
+		float bottomOffset = (bottomH > 0) ? spacing : 0;
+
+		float maxTotalW = s_MainW * 0.8f;
+		float maxTotalH = s_MainH * 0.8f;
+		if (leftW + rightW > maxTotalW)
+		{
+			float ratio = maxTotalW / (leftW + rightW);
+			leftW *= ratio;
+			rightW *= ratio;
+		}
+		if (bottomH > maxTotalH) bottomH = maxTotalH;
+
+		float centerX = s_MainX + leftW + (hasLeft ? spacing : 0);
+		float centerY = s_MainY;
+		float centerW = s_MainW - leftW - rightW - (hasLeft ? spacing : 0) - (hasRight ? spacing : 0);
+		float centerH = s_MainH - bottomH - (hasBottom ? spacing : 0);
 
 		if (s_DockedWindows[DockRegion::Left])
 		{
-			s_DockedWindows[DockRegion::Left]->SetSize(s_MainX, s_MainY, s_LeftWidth, centerH);
+			s_DockedWindows[DockRegion::Left]->SetSize(s_MainX, s_MainY, leftW, centerH);
 		}
 		if (s_DockedWindows[DockRegion::Right])
 		{
-			s_DockedWindows[DockRegion::Right]->SetSize(s_MainX + s_MainW - s_RightWidth, s_MainY, s_RightWidth, centerH);
+			s_DockedWindows[DockRegion::Right]->SetSize(s_MainX + s_MainW - rightW, s_MainY, rightW, centerH);
 		}
 		if (s_DockedWindows[DockRegion::Bottom])
 		{
-			s_DockedWindows[DockRegion::Bottom]->SetSize(s_MainX, s_MainY + centerH, s_MainW, s_BottomHeight);
+			s_DockedWindows[DockRegion::Bottom]->SetSize(s_MainX, s_MainY + centerH + bottomOffset, s_MainW, bottomH);
 		}
 		if (s_DockedWindows[DockRegion::Center])
 		{
-			s_DockedWindows[DockRegion::Center]->SetSize(s_MainX + s_LeftWidth, s_MainY, centerW, centerH);
+			s_DockedWindows[DockRegion::Center]->SetSize(s_MainX + leftW + leftOffset, s_MainY, centerW, centerH);
 		}
+
+		s_CenterX = centerX;
+		s_CenterY = centerY;
+		s_CenterW = centerW;
+		s_CenterH = centerH;
+
+		s_DynamicLeftWidth = leftW;
+		s_DynamicRightWidth = rightW;
+		s_DynamicBottomHeight = bottomH;
 		glfwPostEmptyEvent();
 	}
 
@@ -893,13 +923,33 @@ namespace PulseStudio {
 				window->SetDocked(false);
 				break;
 			}
+			if (pair.second.GetWindow() == window)
+			{
+				pair.second.SetActiveWindow(nullptr);
+				break;
+			}
 		}
+
+		for (auto& pair : s_DockAreas)
+		{
+			if (pair.second.GetWindow() == window)
+			{
+				pair.second.SetActiveWindow(nullptr);
+				break;
+			}
+		}
+
 		auto it = std::find(s_FloatingWindows.begin(), s_FloatingWindows.end(), window);
 		if (it != s_FloatingWindows.end()) s_FloatingWindows.erase(it);
+		window->SetDocked(false);
+		window->SetFloating(true);
 	}
 
 	void uiWindow::StopDragging()
 	{
+		s_ShowDockPanel = false;
+		s_HighlightedButton = DockRegion::None;
+
 		if (!s_DraggingWindow) return;
 		if (s_PreviewRegion != DockRegion::None)
 		{
@@ -957,6 +1007,8 @@ namespace PulseStudio {
 		m_WindowStartX = m_RectX;
 		m_WindowStartY = m_RectY;
 		s_DraggingWindow = this;
+		s_ShowDockPanel = true;
+		s_HighlightedButton = DockRegion::None;
 
 		if (m_IsDocked)
 		{
@@ -980,7 +1032,6 @@ namespace PulseStudio {
 		if (!m_IsDraggingForDock) return;
 		float dx = mouseX - m_DragStartX;
 		float dy = mouseY - m_DragStartY;
-		PS_CORE_INFO("Dragging: dx = {}, dy = {}", dx, dy);
 		SetSize(m_WindowStartX + dx, m_WindowStartY + dy, m_RectWidth, m_RectHeight);
 	}
 
@@ -1005,12 +1056,25 @@ namespace PulseStudio {
 		if (event.GetEventType() == EventType::MouseMoved)
 		{
 			MouseMovedEvent& e = (MouseMovedEvent&)event;
+			float mx = e.GetX(), my = e.GetY();
+			if (s_ShowDockPanel)
+			{
+				DockRegion btn = GetButtonAt(mx, my);
+				if (btn != DockRegion::None)
+				{
+					s_PreviewRegion = btn;
+				}
+				else
+				{
+					s_PreviewRegion = DockRegion::None;
+				}
+				return true;
+			}
 			if (s_DraggingWindow)
 			{
-				s_PreviewRegion = DetectDockTarget(e.GetX(), e.GetY());
+				s_PreviewRegion = DockRegion::None;
 			}
-			OnMouseMoveForSplit(e.GetX(), e.GetY());
-			if (s_IsDraggingLeftSplit || s_IsDraggingRightSplit) return true;
+			return true;
 		}
 		else if (event.GetEventType() == EventType::MouseButtonReleased)
 		{
@@ -1028,64 +1092,138 @@ namespace PulseStudio {
 				s_PreviewRegion = DockRegion::None;
 				MouseButtonEvent& t_event = (MouseButtonReleasedEvent&)event;
 				int action = (event.GetEventType() == EventType::MouseButtonPressed) ? GLFW_PRESS : GLFW_RELEASE;
-				OnMouseButtonForSplit(t_event.GetMouseButton(), (t_event.GetEventType() == EventType::MouseButtonPressed) ? GLFW_PRESS : GLFW_RELEASE, t_event.GetMouseX(), t_event.GetMouseY());
-
-				if (action == GLFW_PRESS && (s_IsDraggingLeftSplit || s_IsDraggingRightSplit)) return true;
+				StopDragging();
+				return true;
 			}
 		}
 		return false;
 	}
 
-	void uiWindow::OnMouseMoveForSplit(float mx, float my)
+	void uiWindow::DrawDockPanel(float mx, float my)
 	{
-		PS_CORE_INFO("OnMouseMoveForSplit: leftDrag = {}, rightDrag = {}", s_IsDraggingLeftSplit, s_IsDraggingRightSplit);
-		if (s_IsDraggingLeftSplit)
+		if (!s_ShowDockPanel) return;
+
+		Application& app = Application::Get();
+		int width = (int)app.GetWindow().GetWidth();
+		int height = (int)app.GetWindow().GetHeight();
+
+		glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT);
+		glPushMatrix();
+
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		glOrtho(0, width, height, 0, -1, 1);
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
+
+		float panelW = 300.0f, panelH = 200.0f;
+		float panelX = (s_MainW - panelW) / 2;
+		float panelY = (s_MainH - panelH) / 2;
+
+		float btnW = 50.0f, btnH = 30.0f;
+		float gap = 10.0f;
+		float startX = panelX + (panelW - 3 * (btnW + gap) + gap) / 2;
+		float startY = panelY + (panelH - 3 * (btnH + gap) + gap) / 2;
+
+		DockRegion regions[4] =
 		{
-			float deltaX = mx - s_LeftSplitStartX;
-			s_LeftWidth += deltaX;
-			if (s_LeftWidth < 100) s_LeftWidth = 100;
-			if (s_LeftWidth > s_MainW - 200) s_LeftWidth = s_MainW - 200;
-			s_LeftSplitStartX = mx;
-			PS_CORE_INFO("OnMouseMoveForSplit: left width = {}", s_LeftWidth);
-			UpdateDockLayout();
-		}
-		else if (s_IsDraggingRightSplit)
+			DockRegion::Left,
+			DockRegion::Center,
+			DockRegion::Right,
+			DockRegion::Bottom
+		};
+
+		std::string labels[4] = { "L", "C", "R", "B" };
+		for (int i = 0; i < 3; ++i)
 		{
-			float deltaX = mx - s_RightSplitStartX;
-			s_RightWidth -= deltaX;
-			if (s_RightWidth < 100) s_RightWidth = 100;
-			if (s_RightWidth > s_MainW - 200) s_RightWidth = s_MainW - 200;
-			s_RightSplitStartX = mx;
-			UpdateDockLayout();
+			float x = startX + i * (btnW + gap);
+			float y = startY;
+			bool hovered = (mx >= x && mx <= x + btnW && my >= y && my <= y + btnH);
+			if (hovered)
+			{
+				glColor4f(0.4f, 0.6f, 0.9f, 1.0f);
+				s_HighlightedButton = regions[i];
+			}
+			else
+			{
+				glColor4f(0.3f, 0.3f, 0.35f, 1.0f);
+			}
+			glBegin(GL_QUADS);
+			glVertex2f(x, y);
+			glVertex2f(x + btnW, y);
+			glVertex2f(x + btnW, y + btnH);
+			glVertex2f(x, y + btnH);
+			glEnd();
+
+			float textW = TextRenderer::Get().GetTextWidth(labels[i]);
+			float textH = TextRenderer::Get().GetTextHeight();
+			float textX = x + (btnW - textW) / 2;
+			float textY = y + (btnH - textH) / 2;
+			TextRenderer::Get().DrawText(labels[i], textX, textY, 1.0f, 1.0f, 1.0f, 0.9f);
 		}
+
+		float x = startX + 1 * (btnW + gap);
+		float y = startY + btnH + gap;
+		bool hovered = (mx >= x && mx <= x + btnW && my >= y && my <= y + btnH);
+		if (hovered)
+		{
+			glColor4f(0.4f, 0.6f, 0.9f, 1.0f);
+			s_HighlightedButton = DockRegion::Bottom;
+		}
+		else
+		{
+			glColor4f(0.3f, 0.3f, 0.35f, 1.0f);
+		}
+		glBegin(GL_QUADS);
+		glVertex2f(x, y);
+		glVertex2f(x + btnW, y);
+		glVertex2f(x + btnW, y + btnH);
+		glVertex2f(x, y + btnH);
+		glEnd();
+		float textW = TextRenderer::Get().GetTextWidth(labels[3]);
+		float textH = TextRenderer::Get().GetTextHeight();
+		float textX = x + (btnW - textW) / 2;
+		float textY = y + (btnH - textH) / 2;
+		TextRenderer::Get().DrawText(labels[3], textX, textY, 1.0f, 1.0f, 1.0f, 0.9f);
 	}
 
-	void uiWindow::OnMouseButtonForSplit(int button, int action, float mx, float my)
+	DockRegion uiWindow::GetButtonAt(float mx, float my)
 	{
-		if (button != GLFW_MOUSE_BUTTON_LEFT) return;
-		float centerH = s_MainH - s_BottomHeight;
-		float leftSplitX = s_MainX + s_LeftWidth;
-		float rightSplitX = s_MainX + s_MainW - s_RightWidth;
-		const float hitRange = 10.0f;
+		float panelW = 300.0f, panelH = 300.0f;
+		float panelX = (s_MainW - panelW) / 2;
+		float panelY = (s_MainH - panelH) / 2;
+		float btnW = 50.0f, btnH = 30.0f;
+		float gap = 10.0f;
+		float startX = panelX + (panelW - 3 * (btnW + gap) + gap) / 2;
+		float startY = panelY + (panelH - 3 * (btnH + gap) + gap) / 2;
+		DockRegion regions[4] = 
+		{
+			DockRegion::Left,
+			DockRegion::Center,
+			DockRegion::Right,
+			DockRegion::Bottom
+		};
 
-		if (action == GLFW_PRESS)
+		for (int i = 0; i < 3; ++i)
 		{
-			if (fabs(mx - leftSplitX) < hitRange && my >= s_MainY && my <= s_MainY + centerH)
+			float x = startX + i * (btnW + gap);
+			float y = startY;
+			if (mx >= x && mx <= x + btnW && my >= y && my <= y + btnH)
 			{
-				s_IsDraggingLeftSplit = true;
-				s_LeftSplitStartX = mx;
-			}
-			else if (fabs(mx - rightSplitX) < hitRange && my >= s_MainY && my <= s_MainY + centerH)
-			{
-				s_IsDraggingRightSplit = true;
-				s_RightSplitStartX = mx;
+				return regions[i];
 			}
 		}
-		else if (action == GLFW_RELEASE)
+
+		float x = startX + btnW + gap;
+		float y = startY + btnH + gap;
+		if (mx >= x && mx <= x + btnW && my >= y && my <= y + btnH)
 		{
-			s_IsDraggingLeftSplit = false;
-			s_IsDraggingRightSplit = false;
+			return regions[3];
 		}
+		return DockRegion::None;
 	}
 
 }

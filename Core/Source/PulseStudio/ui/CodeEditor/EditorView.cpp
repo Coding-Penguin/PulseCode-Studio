@@ -61,13 +61,13 @@ namespace PulseStudio {
 		}
 	}
 
-	void EditorView::Render(const TextBuffer& buffer, const Cursor& cursor,
-		const Highlight& highlighter,
-		float deltaTime)
+	void EditorView::Render(const TextBuffer& buffer, const Cursor& cursor, const Highlight& highlighter, float deltaTime)
 	{
+		if (m_LineHeight <= 0) m_LineHeight = 20.0f;
 		m_buffer = buffer;
 
 		float totalHeight = buffer.GetLineCount() * m_LineHeight;
+		int totalLines = buffer.GetLineCount();
 		float maxScrollY = std::max(0.0f, totalHeight - m_H);
 		if (m_ScrollY < 0) m_ScrollY = 0;
 		if (m_ScrollY > maxScrollY) m_ScrollY = maxScrollY;
@@ -89,13 +89,18 @@ namespace PulseStudio {
 
 		UpdateCursorBlink(deltaTime);
 
-		int firstLine = (int)(m_ScrollY / m_LineHeight);
-		int lastLine = firstLine + (int)(m_H / m_LineHeight) + 2;
-		int totalLines = buffer.GetLineCount();
-		if (firstLine < 0) firstLine = 0;
-		if (lastLine > totalLines) lastLine = totalLines;
+		if (m_LineHeight <= 0)
+		{
+			m_LineHeight = 16.0f;
+		}
 
-		float startY = m_Y - m_ScrollY;
+		float scrollY = m_ScrollY;
+		float startY = m_Y - scrollY;
+
+		int firstLine = (int)(scrollY / m_LineHeight);
+		int lastLine = totalLines + 3;
+		if (firstLine < 0) firstLine = 0;
+		if (lastLine > totalLines + 1) lastLine = totalLines;
 
 		CursorPosition pos = cursor.GetPosition();
 		FindMatchingBracket(buffer, pos.line, pos.col);
@@ -200,7 +205,14 @@ namespace PulseStudio {
 
 	void EditorView::DrawCursor(const Cursor& cursor, float cursorX, float cursorY)
 	{
-		glColor4f(1.0f, 1.0f, 1.0f, 0.7f);
+		if (ThemeManager::IsDarkTheme())
+		{
+			glColor4f(1.0f, 1.0f, 1.0f, 0.7f);
+		}
+		else
+		{
+			glColor4f(0.0f, 0.0f, 0.0f, 0.7f);
+		}
 		glLineWidth(2.0f);
 		glBegin(GL_LINES);
 		glVertex2f(cursorX, cursorY);
@@ -210,6 +222,7 @@ namespace PulseStudio {
 
 	CursorPosition EditorView::ScreenToTextPosition(float mx, float my, const TextBuffer& buffer) const
 	{
+		if (m_LineHeight <= 0) return { 0, 0 };
 		float localX = mx - (m_X + m_LineNumberWidth);
 		float localY = my - m_Y;
 		if (localX < 0) localX = 0;
@@ -217,7 +230,12 @@ namespace PulseStudio {
 
 		int line = (int)((localY + m_ScrollY) / m_LineHeight);
 		if (line < 0) line = 0;
-		if (line >= buffer.GetLineCount()) line = buffer.GetLineCount() - 1;
+		int lineCount = buffer.GetLineCount();
+		if (lineCount == 0) return { 0, 0 };
+		if (line >= lineCount)
+			line = lineCount - 1;
+
+		PS_CORE_INFO("ScreenToText: localY = {0}, scrollY = {1}, line = {2}, lineCount = {3}", localY, m_ScrollY, line, lineCount);
 
 		const std::string& lineStr = buffer.GetLine(line);
 		int col = 0;
@@ -418,9 +436,12 @@ namespace PulseStudio {
 	void EditorView::ClampScroll() 
 	{
 		float totalHeight = m_buffer.GetLineCount() * m_LineHeight;
-		float maxScrollY = std::max(0.0f, totalHeight - m_H);
+		float maxScrollY = std::max(0.0f, totalHeight - m_H + m_LineHeight);
 		if (m_ScrollY < 0) m_ScrollY = 0;
 		if (m_ScrollY > maxScrollY) m_ScrollY = maxScrollY;
+
+		PS_CORE_INFO("ClampScroll: totalHeight = {0}, m_H = {1}, maxScrollY = {2}, m_ScrollY = {3}", totalHeight, m_H, maxScrollY, m_ScrollY);
+
 		// Horizontal scrolling is currently unrestricted (expandable in the future)
 	}
 
@@ -516,7 +537,7 @@ namespace PulseStudio {
 				}
 				else
 				{
-					float maxScrollY = totalHeight - m_H;
+					float maxScrollY = totalHeight - m_H + m_LineHeight;
 					float clickRatio = (mouseY - m_Y) / m_H;
 					float newScrollY = clickRatio * totalHeight - m_H / 2;
 					newScrollY = std::max(0.0f, std::min(maxScrollY, newScrollY));

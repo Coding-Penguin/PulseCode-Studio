@@ -12,7 +12,8 @@ namespace PulseStudio {
 	class CodeEditor
 	{
 	public:
-		CodeEditor();
+		static CodeEditor& Get();
+		CodeEditor(const std::string& path);
 		virtual ~CodeEditor();
 
 		virtual void OnUpdate(float deltaTime);
@@ -20,7 +21,6 @@ namespace PulseStudio {
 
 		void LoadFile(const std::string& path);
 		void SaveFile(const std::string& path);
-		void SetText(const std::string& text);
 		std::string GetText() const;
 
 		void SetSyntaxMode(const Language& mode);
@@ -33,7 +33,10 @@ namespace PulseStudio {
 		void DeleteSelection();
 
 		void SetViewBounds(float x, float y, float w, float h) { m_View->SetBounds(x, y, w, h); }
+		std::string GetFilePath() const { return m_Buffer.GetFilePath(); }
 	private:
+		static CodeEditor instance;
+
 		TextBuffer m_Buffer;
 		Cursor m_Cursor;
 		Highlight m_Highlighter;

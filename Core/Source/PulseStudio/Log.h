@@ -19,17 +19,17 @@ namespace PulseStudio {
 }
 
 // Core Log Macros
-#define PS_CORE_DEBUG(...)	  ::PulseStudio::Log::GetCoreLogger()->debug(__VA_ARGS__)
-#define PS_CORE_TRACE(...)    ::PulseStudio::Log::GetCoreLogger()->trace(__VA_ARGS__)
-#define PS_CORE_INFO(...)     ::PulseStudio::Log::GetCoreLogger()->info(__VA_ARGS__)
-#define PS_CORE_WARN(...)     ::PulseStudio::Log::GetCoreLogger()->warn(__VA_ARGS__)
-#define PS_CORE_ERROR(...)    ::PulseStudio::Log::GetCoreLogger()->error(__VA_ARGS__)
-#define PS_CORE_FATAL(...) ::PulseStudio::Log::GetCoreLogger()->critical(__VA_ARGS__)
+#define PS_CORE_DEBUG(...)		::PulseStudio::Log::GetCoreLogger()->debug(__VA_ARGS__)
+#define PS_CORE_TRACE(...)		::PulseStudio::Log::GetCoreLogger()->trace(__VA_ARGS__)
+#define PS_CORE_INFO(...)		::PulseStudio::Log::GetCoreLogger()->info(__VA_ARGS__)
+#define PS_CORE_WARN(...)		::PulseStudio::Log::GetCoreLogger()->warn(__VA_ARGS__)
+#define PS_CORE_ERROR(...)		::PulseStudio::Log::GetCoreLogger()->error(__VA_ARGS__)
+#define PS_CORE_FATAL(...)		::PulseStudio::Log::GetCoreLogger()->critical(__VA_ARGS__)
 
 // Client Log Macros
-#define PS_DEBUG(...)	::PulseStudio::Log::GetClientLogger()->debug(__VA_ARGS__)
-#define PS_TRACE(...)    ::PulseStudio::Log::GetClientLogger()->trace(__VA_ARGS__)
-#define PS_INFO(...)     ::PulseStudio::Log::GetClientLogger()->info(__VA_ARGS__)
-#define PS_WARN(...)     ::PulseStudio::Log::GetClientLogger()->warn(__VA_ARGS__)
-#define PS_ERROR(...)	::PulseStudio::Log::GetClientLogger()->error(__VA_ARGS__)
-#define PS_FATAL(...) ::PulseStudio::Log::GetClientLogger()->critical(__VA_ARGS__)
+#define PS_DEBUG(...)		::PulseStudio::Log::GetClientLogger()->debug(__VA_ARGS__)
+#define PS_TRACE(...)		::PulseStudio::Log::GetClientLogger()->trace(__VA_ARGS__)
+#define PS_INFO(...)		::PulseStudio::Log::GetClientLogger()->info(__VA_ARGS__)
+#define PS_WARN(...)		::PulseStudio::Log::GetClientLogger()->warn(__VA_ARGS__)
+#define PS_ERROR(...)		::PulseStudio::Log::GetClientLogger()->error(__VA_ARGS__)
+#define PS_FATAL(...)		::PulseStudio::Log::GetClientLogger()->critical(__VA_ARGS__)

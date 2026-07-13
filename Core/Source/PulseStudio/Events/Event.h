@@ -13,8 +13,7 @@ namespace PulseStudio {
 	enum class EventType
 	{
 		Nore = 0,
-		WindowClose, WindowResize, WindowFocus, WindowMoved,
-		AppTick, AppUpdate, AppRender,
+		WindowClose, WindowResize, WindowFocus, WindowMoved, AppTick, AppUpdate, AppRender,
 		KeyPressed, KeyReleased, Char,
 		MouseButtonPressed, MouseButtonReleased, MouseMoved, MouseScrolled
 	};

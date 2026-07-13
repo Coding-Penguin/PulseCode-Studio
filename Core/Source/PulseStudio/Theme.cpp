@@ -4,6 +4,5 @@
 
 namespace PulseStudio
 {
-	Settings s_ThemeSettings;
-	Theme ThemeManager::s_CurrentTheme = s_ThemeSettings.GetTheme();
+	Theme ThemeManager::s_CurrentTheme = Theme::Dark;
 }

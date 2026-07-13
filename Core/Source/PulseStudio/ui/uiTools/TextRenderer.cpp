@@ -15,7 +15,7 @@ namespace PulseStudio {
 		return instance;
 	}
 
-	TextRenderer::~TextRenderer() 
+	TextRenderer::~TextRenderer()
 	{
 		if (m_TextureID) glDeleteTextures(1, &m_TextureID);
 	}
@@ -40,7 +40,7 @@ namespace PulseStudio {
 		file.close();
 
 		stbtt_fontinfo info;
-		if (!stbtt_InitFont(&info, buffer.data(), 0)) 
+		if (!stbtt_InitFont(&info, buffer.data(), 0))
 		{
 			PS_CORE_ERROR("Failed to init font: {}", fontPath);
 			return false;
@@ -67,10 +67,11 @@ namespace PulseStudio {
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, atlasW, atlasH, 0, GL_ALPHA, GL_UNSIGNED_BYTE, texData);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 		glBindTexture(GL_TEXTURE_2D, 0);
 		delete[] texData;
 
-		for (int i = 0; i < 95; ++i) 
+		for (int i = 0; i < 95; ++i)
 		{
 			char c = (char)(32 + i);
 			auto& bc = bakedChars[i];

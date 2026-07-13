@@ -17,8 +17,13 @@ namespace PulseStudio {
 	{
 		Left,
 		Right,
+		Top,
 		Bottom,
 		Center,
+		TopLeft,
+		TopRight,
+		BottomLeft,
+		BottomRight,
 		None
 	};
 
@@ -76,6 +81,23 @@ namespace PulseStudio {
 		static void DrawDockAreas();
 		static void DrawDockArea(DockRegion region);
 		static void UpdateDockLayout();
+		static void DrawDockPanel(float mx, float my);
+		static DockRegion GetButtonAt(float mx, float my);
+
+		static DockRegion GetPreviewRegion() { return s_PreviewRegion; }
+		static float GetMainX() { return s_MainX; }
+		static float GetMainY() { return s_MainY; }
+		static float GetMainW() { return s_MainW; }
+		static float GetMainH() { return s_MainH; }
+		static float GetDynamicLeftWidth() { return s_DynamicLeftWidth; }
+		static float GetDynamicRightWidth() { return s_DynamicRightWidth; }
+		static float GetDynamicBottomHeight() { return s_DynamicBottomHeight; }
+		static float GetDockSpacing() { return s_DockSpacing; }
+		static void SetDockSpacing(float spacing) { s_DockSpacing = spacing; }
+		static float GetCenterX() { return s_CenterX; }
+		static float GetCenterY() { return s_CenterY; }
+		static float GetCenterW() { return s_CenterW; }
+		static float GetCenterH() { return s_CenterH; }
 	private:
 		std::string m_name = "uiWindow";
 		float m_RectX = 100.0f;
@@ -110,6 +132,21 @@ namespace PulseStudio {
 			uiWindow* activeWindow = nullptr;
 			float x, y, w, h;
 			float tabHeight = 25.0f;
+
+			uiWindow* GetWindow()
+			{ 
+				if (windows.empty()) return nullptr;
+				return windows[0];
+			}
+			void SetActiveWindow(uiWindow* window)
+			{
+				auto it = std::find(windows.begin(), windows.end(), window);
+				if (it != windows.end())
+				{
+					activeWindow = window;
+					std::iter_swap(windows.begin(), it);
+				}
+			}
 		};
 
 		static std::unordered_map<DockRegion, DockArea> s_DockAreas;
@@ -118,6 +155,12 @@ namespace PulseStudio {
 		static DockRegion s_PreviewRegion;
 		static float s_MainX, s_MainY, s_MainW, s_MainH;
 		static float s_DragStartX, s_DragStartY;
+		static float s_DynamicLeftWidth;
+		static float s_DynamicRightWidth;
+		static float s_DynamicBottomHeight;
+
+		static bool s_ShowDockPanel;
+		static DockRegion s_HighlightedButton;
 
 		DockRegion m_DockRegion = DockRegion::None;
 		bool m_AutoHide = false;
@@ -127,15 +170,11 @@ namespace PulseStudio {
 
 		static std::unordered_map<DockRegion, uiWindow*> s_DockedWindows;
 
-		static bool s_IsDraggingLeftSplit;
-		static bool s_IsDraggingRightSplit;
-		static float s_LeftSplitStartX;
-		static float s_RightSplitStartX;
 		static float s_LeftWidth;
 		static float s_RightWidth;
 		static float s_BottomHeight;
-		static void OnMouseMoveForSplit(float mx, float my);
-		static void OnMouseButtonForSplit(int button, int action, float mx, float my);
+
+		static float s_DockSpacing, s_CenterX, s_CenterY, s_CenterW, s_CenterH;
 
 		static DockRegion DetectDockTarget(float mx, float my);
 		static void UndockWindow(uiWindow* window);

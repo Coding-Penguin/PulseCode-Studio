@@ -10,12 +10,18 @@ namespace PulseStudio {
 		m_Lines.emplace_back();
 	}
 
-	void TextBuffer::LoadFromString(const std::string& text)
+	void TextBuffer::LoadFromFile(const std::string& filePath)
 	{
+		m_FilePath = filePath;
 		m_Lines.clear();
-		std::stringstream ss(text);
+		std::ifstream file(filePath);
+		if (!file.is_open())
+		{
+			m_Lines.emplace_back();
+			return;
+		}
 		std::string line;
-		while (std::getline(ss, line))
+		while (std::getline(file, line))
 		{
 			m_Lines.push_back(line);
 		}

@@ -10,9 +10,9 @@
 
 namespace PulseStudio {
 
-	CodeEditor::CodeEditor()
+	CodeEditor::CodeEditor(const std::string& path)
 	{
-		m_Buffer.LoadFromString("");
+		m_Buffer.LoadFromFile(path);
 		m_Cursor.MoveTo(0, 0);
 		m_Highlighter.SetLanguage(Language::CPP);
 
@@ -118,7 +118,7 @@ namespace PulseStudio {
 		if (event.GetEventType() == EventType::MouseScrolled)
 		{
 			MouseScrolledEvent& e = (MouseScrolledEvent&)event;
-			m_View->HandleScroll(e.GetXOffset() * 20.0f, -e.GetYOffset() * 20.0f);
+			m_View->HandleScroll(e.GetXOffset() * 30.0f, -e.GetYOffset() * 30.0f);
 			return true;
 		}
 		return false;
@@ -134,7 +134,7 @@ namespace PulseStudio {
 		}
 		std::stringstream buffer;
 		buffer << file.rdbuf();
-		SetText(buffer.str());
+		LoadFile(buffer.str());
 		PS_CORE_INFO("Loaded file: {}", path);
 	}
 
@@ -149,13 +149,6 @@ namespace PulseStudio {
 		file << GetText();
 		file.close();
 		PS_CORE_INFO("Saved file: {}", path);
-	}
-
-	void CodeEditor::SetText(const std::string& text)
-	{
-		m_Buffer.LoadFromString(text);
-		m_Cursor.MoveTo(0, 0);
-		m_View->HandleScroll(0, 0);
 	}
 
 	std::string CodeEditor::GetText() const

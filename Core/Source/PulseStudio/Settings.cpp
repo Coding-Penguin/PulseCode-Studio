@@ -42,14 +42,6 @@ namespace PulseStudio {
 			{
 				m_Theme = Theme::Icy_Mint;
 			}
-			else if (m_ThemeName == "Sand")
-			{
-				m_Theme = Theme::Sand;
-			}
-			else if (m_ThemeName == "Ice")
-			{
-				m_Theme = Theme::Ice;
-			}
 			else if (m_ThemeName == "Dark")
 			{
 				m_Theme = Theme::Dark;
@@ -61,14 +53,6 @@ namespace PulseStudio {
 			else if (m_ThemeName == "Moonlight")
 			{
 				m_Theme = Theme::Moonlight;
-			}
-			else if (m_ThemeName == "Hacker")
-			{
-				m_Theme = Theme::Hacker;
-			}
-			else if (m_ThemeName == "Grape")
-			{
-				m_Theme = Theme::Grape;
 			}
 			else
 			{

@@ -4,6 +4,7 @@
 #include "PulseStudio/Events/Event.h"
 #include "PhotoRenderer.h"
 #include "uiButton.h"
+#include "Search.h"
 
 namespace PulseStudio
 {

@@ -33,7 +33,7 @@ namespace PulseStudio {
 		Log::Init();
 		PS_CORE_INFO("Initilized log!");
 
-		ThemeManager::SetTheme(Theme::Dark);
+		ThemeManager::SetTheme(Theme::Moonlight);
 
 		WindowProps props("Pulse-Studio Integrated Development Environment", 1720, 1000);
 		m_MainWindow = std::unique_ptr<Window>(Window::Create(props));
@@ -44,7 +44,7 @@ namespace PulseStudio {
 		if (!isFontLoaded())
 		{
 			PS_CORE_INFO("Loading font...");
-			TextRenderer::Get().LoadFont("H:/Projects/CppProject/Pulse-Studio/Core/Resources/Fonts/JetBrainsMono-Regular.ttf", 24.0f);
+			TextRenderer::Get().LoadFont("H:/Projects/CppProject/Pulse-Studio/Core/Resources/Fonts/Ubuntu-L.ttf", 24.0f);
 			SetFontLoaded(true);
 			PS_CORE_INFO("Font loaded successfully.");
 		}
@@ -74,7 +74,7 @@ namespace PulseStudio {
 	{
 		PS_CORE_TRACE(e.ToString());
 		EventDispatcher dispatcher(e);
-		dispatcher.Dispatch<WindowCloseEvent>(std::bind(&Application::OnWindowClose, this, std::placeholders::_1));
+		dispatcher.Dispatch<WindowCloseEvent>(BIND_EVENT_FN(OnWindowClose));
 		for (auto it = m_LayerStack.end(); it != m_LayerStack.begin(); )
 		{
 			(*--it)->OnEvent(e);
@@ -117,31 +117,7 @@ namespace PulseStudio {
 		}
 		else if (ThemeManager::GetCurrentTheme() == Theme::Moonlight)
 		{
-			glClearColor(0.1f, 0.15f, 0.27f, 1);
-			glClear(GL_COLOR_BUFFER_BIT);
-			return true;
-		}
-		else if (ThemeManager::GetCurrentTheme() == Theme::Hacker)
-		{
-			glClearColor(0.067f, 0.073f, 0.07f, 1);
-			glClear(GL_COLOR_BUFFER_BIT);
-			return true;
-		}
-		else if (ThemeManager::GetCurrentTheme() == Theme::Sand)
-		{
-			glClearColor(0.95f, 0.9f, 0.7f, 1);
-			glClear(GL_COLOR_BUFFER_BIT);
-			return true;
-		}
-		else if (ThemeManager::GetCurrentTheme() == Theme::Ice)
-		{
-			glClearColor(0.85f, 0.85f, 0.9f, 1);
-			glClear(GL_COLOR_BUFFER_BIT);
-			return true;
-		}
-		else if (ThemeManager::GetCurrentTheme() == Theme::Grape)
-		{
-			glClearColor(0.2f, 0.0f, 0.3f, 1);
+			glClearColor(0.05f, 0.1f, 0.17f, 1);
 			glClear(GL_COLOR_BUFFER_BIT);
 			return true;
 		}
