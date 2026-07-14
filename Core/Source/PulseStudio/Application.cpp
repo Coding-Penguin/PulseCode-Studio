@@ -33,7 +33,8 @@ namespace PulseStudio {
 		Log::Init();
 		PS_CORE_INFO("Initilized log!");
 
-		ThemeManager::SetTheme(Theme::Moonlight);
+		ThemeManager::SetTheme(Theme::Dark);
+		ChannelManager::SetChannel(Channel::Preview);
 
 		WindowProps props("Pulse-Studio Integrated Development Environment", 1720, 1000);
 		m_MainWindow = std::unique_ptr<Window>(Window::Create(props));
@@ -121,11 +122,6 @@ namespace PulseStudio {
 			glClear(GL_COLOR_BUFFER_BIT);
 			return true;
 		}
-		else
-		{
-			PS_ERROR("Unknow this theme!");
-			return false;
-		}
 	}
 
 	void Application::Run()
@@ -142,8 +138,12 @@ namespace PulseStudio {
 			SetGLFWColor();
 
 			for (Layer* layer : m_LayerStack)
+			{
 				if (layer)
+				{
 					layer->OnUpdate(deltaTime);
+				}
+			}
 
 			if (m_MainWindow)
 			{

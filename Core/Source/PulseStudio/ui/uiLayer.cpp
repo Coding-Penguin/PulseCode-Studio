@@ -36,11 +36,11 @@ namespace PulseStudio {
 		int width = app.GetWindow().GetWidth();
 		int height = app.GetWindow().GetHeight();
 
-		titleBar = new uiTitleBar();
-		titleBar->OnAttach();
-
 		m_StatusBar = new uiStatusBar();
 		m_StatusBar->OnAttach();
+
+		titleBar = new uiTitleBar();
+		titleBar->OnAttach();
 
 		uiWindow::InitDockSystem(0.0f, 110.0f, width, height - 150.0f);
 
@@ -128,14 +128,6 @@ namespace PulseStudio {
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-		if (titleBar) titleBar->OnUpdate(deltaTime);
-		if (m_ShortcutBar)
-		{
-			m_ShortcutBar->OnUpdate(deltaTime);
-			m_ShortcutBar->Draw();
-		}
-		if (m_StatusBar) m_StatusBar->OnUpdate(deltaTime);
-
 		MouseCircle::Get().OnUpdate(deltaTime);
 
 		uiWindow::DrawDockAreas();
@@ -144,20 +136,9 @@ namespace PulseStudio {
 		glfwGetCursorPos(static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow()), &mx, &my);
 		uiWindow::DrawDockPanel(mx, my);
 
-		if (m_StatusBar) m_StatusBar->SetStatusText("Ready");
-
-		float centerX = uiWindow::GetCenterX();
-		float centerY = uiWindow::GetCenterY();
-		float centerW = uiWindow::GetCenterW();
-		float centerH = uiWindow::GetCenterH();
-		codeEditor->SetViewBounds(centerX, centerY, centerW, centerH);
-		codeEditor->OnUpdate(deltaTime);
 		float leftW = uiWindow::GetDynamicLeftWidth();
 		float rightW = uiWindow::GetDynamicRightWidth();
 		float bottomH = uiWindow::GetDynamicBottomHeight();
-
-		for (auto* win : m_Windows)
-			win->OnUpdate(deltaTime);
 
 		DockRegion preview = uiWindow::GetPreviewRegion();
 		if (preview != DockRegion::None)
@@ -197,6 +178,24 @@ namespace PulseStudio {
 			glVertex2f(x, y + h);
 			glEnd();
 		}
+
+		if (m_ShortcutBar)
+		{
+			m_ShortcutBar->OnUpdate(deltaTime);
+			m_ShortcutBar->Draw();
+		}
+		if (m_StatusBar) m_StatusBar->OnUpdate(deltaTime);
+
+		if (titleBar) titleBar->OnUpdate(deltaTime);
+
+		if (m_StatusBar) m_StatusBar->SetStatusText("Ready");
+
+		float centerX = uiWindow::GetCenterX();
+		float centerY = uiWindow::GetCenterY();
+		float centerW = uiWindow::GetCenterW();
+		float centerH = uiWindow::GetCenterH();
+		codeEditor->SetViewBounds(centerX, centerY, centerW, centerH);
+		codeEditor->OnUpdate(deltaTime);
 	}
 
 	bool uiLayer::OnEvent(Event& event)
@@ -206,14 +205,14 @@ namespace PulseStudio {
 		if (titleBar && titleBar->OnEvent(event))
 			return true;
 
-		if (m_ShortcutBar && m_ShortcutBar->OnEvent(event))
-			return true;
-
 		for (auto it = m_Windows.rbegin(); it != m_Windows.rend(); ++it)
 		{
 			if ((*it)->OnEvent(event))
 				return true;
 		}
+
+		if (m_ShortcutBar && m_ShortcutBar->OnEvent(event))
+			return true;
 
 		if (codeEditor) return codeEditor->OnEvent(event);
 

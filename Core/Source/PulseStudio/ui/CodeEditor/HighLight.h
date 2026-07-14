@@ -1,6 +1,5 @@
 #pragma once
-#include <vector>
-#include <string>
+#include "pspch.h"
 #include "glm/glm.hpp"
 
 namespace PulseStudio {
@@ -37,7 +36,7 @@ namespace PulseStudio {
 		void SetLanguage(const Language& mode);
 		std::vector<HighlightSpan> HighlightLine(const std::string& line) const;
 
-		glm::vec3 GetColorForHighlight(HighlightColor color)
+		glm::vec3 GetColorForHighlight(HighlightColor color) const
 		{
 			switch (color)
 			{

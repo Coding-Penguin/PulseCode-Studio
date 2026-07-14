@@ -21,8 +21,6 @@
 
 #include <stb_image.h>
 
-#include "PulseStudio/Channel.h"
-
 namespace PulseStudio {
 
 	static bool s_GLFWInitialized = false;
@@ -74,10 +72,7 @@ namespace PulseStudio {
 		glfwSetWindowUserPointer(m_Window, &m_Data);
 		SetVSync(true);
 
-		if (ThemeManager::IsDarkTheme())
-			SetWindowIcon(m_Window, "H:/Projects/CppProject/Pulse-Studio/Core/Resources/Images/PulseStudio_500x500_White.png");
-		else
-			SetWindowIcon(m_Window, "H:/Projects/CppProject/Pulse-Studio/Core/Resources/Images/PulseStudio_500x500_Black.png");
+		SetWindowIcon(m_Window);
 
 		// Set GLFW callbacks
 		glfwSetWindowSizeCallback(m_Window, [](GLFWwindow* window, int width, int height)
@@ -394,13 +389,25 @@ namespace PulseStudio {
 		m_IsResizingWindow = false;
 	}
 
-	void WindowsWindow::SetWindowIcon(GLFWwindow* window, const std::string& iconPath)
+	void WindowsWindow::SetWindowIcon(GLFWwindow* window)
 	{
 		int width, height, channels;
+		std::string iconPath;
+
+		if (ThemeManager::IsDarkTheme())
+		{
+			iconPath = "H:/Projects/CppProject/Pulse-Studio/Core/Resources/Images/PulseStudio_500x500_White.png";
+		}
+		else
+		{
+			iconPath = "H:/Projects/CppProject/Pulse-Studio/Core/Resources/Images/PulseStudio_500x500_Black.png";
+		}
+
 		unsigned char* data = stbi_load(iconPath.c_str(), &width, &height, &channels, 4);
+
 		if (!data)
 		{
-			PS_CORE_WARN("Failed to load icon: {}", iconPath);
+			PS_CORE_WARN("Failed to load icon!");
 			return;
 		}
 
@@ -409,7 +416,6 @@ namespace PulseStudio {
 		image.height = height;
 		image.pixels = data;
 		glfwSetWindowIcon(window, 1, &image);
-		stbi_image_free(data);
 	}
 
 }

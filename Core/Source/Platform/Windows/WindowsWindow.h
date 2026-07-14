@@ -32,7 +32,7 @@ namespace PulseStudio {
 
 		void SetUnsemi_transparency(double value) override;
 
-		void SetWindowIcon(GLFWwindow* window, const std::string& iconPath) override;
+		void SetWindowIcon(GLFWwindow* window) override;
 	private:
 		GLFWwindow* m_Window;
 

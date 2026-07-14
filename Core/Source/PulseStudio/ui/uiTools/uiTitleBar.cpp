@@ -35,13 +35,25 @@ namespace PulseStudio
 	void uiTitleBar::OnAttach()
 	{
 		m_Logo.reset(new PhotoRenderer());
-		m_Logo->LoadFromFile("H:/Projects/CppProject/Pulse-Studio/Core/Resources/Images/System.png");
+		if (ThemeManager::IsDarkTheme())
+			m_Logo->LoadFromFile("H:/Projects/CppProject/Pulse-Studio/Core/Resources/Images/PulseStudio_500x500_White.png");
+		else
+			m_Logo->LoadFromFile("H:/Projects/CppProject/Pulse-Studio/Core/Resources/Images/PulseStudio_500x500_Black.png");
+		
 		PS_INFO("Logo loaded: {0}", m_Logo->IsLoaded());
 
-		float x = 40, y = 10;
+		float x, y = 10;
+		if (ChannelManager::GetChannel() == Channel::Preview)
+		{
+			x = 50;
+		}
+		else
+		{
+			x = 10;
+		}
 		auto addTitleButton = [&](const std::string& text, float width)
 			{
-				auto btn = std::make_unique<uiButton>(text, x, y, width, 30, ButtonStyles::NoBackgroundOrLine);
+				auto btn = std::make_unique<uiButton>(text, x, y, width, 40, ButtonStyles::NoBackgroundOrLine);
 				btn->SetCallback([=]() { PS_INFO("Clicked \"{}\"", text); });
 				m_Buttons.push_back(std::move(btn));
 				x += width + 10;
@@ -59,12 +71,12 @@ namespace PulseStudio
 
 		auto addSearchButton = [&](const std::string& text, float width)
 			{
-				auto btn = std::make_unique<uiButton>(text, x, y, width, 30, ButtonStyles::NoBackgroundOrLine);
-				btn->SetCallback([=]() { PS_INFO("Clicked \"{}\"", text); });
+				auto btn = std::make_unique<uiButton>(text, x, y, width, 40, ButtonStyles::NoBackgroundOrLine);
+				btn->SetCallback([=]() { PS_INFO("Clicked \"Search\"."); });
 				m_Buttons.push_back(std::move(btn));
 				x += width + 10;
 			};
-		addSearchButton("Search...", 130);
+		addSearchButton("Search...", 150);
 	}
 
 	void uiTitleBar::OnDetach()
@@ -76,7 +88,7 @@ namespace PulseStudio
 	{
 		if (m_Logo && m_Logo->IsLoaded())
 		{
-			m_Logo->Draw(10, 5, 20, 20);
+			m_Logo->Draw(10, 10, 40, 40);
 		}
 
 		for (auto& btn : m_Buttons) 
