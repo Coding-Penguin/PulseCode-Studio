@@ -42,27 +42,9 @@ namespace PulseStudio {
 		titleBar = new uiTitleBar();
 		titleBar->OnAttach();
 
-		uiWindow::InitDockSystem(0.0f, 110.0f, width, height - 150.0f);
-
-		auto* fileExplorer = new uiWindow("FileExplorer");
-		auto* output = new uiWindow("Output");
-		auto* properties = new uiWindow("Properties");
-		auto* notifications = new uiWindow("Notifications");
-		m_Windows.push_back(fileExplorer);
-		m_Windows.push_back(output);
-		m_Windows.push_back(properties);
-		m_Windows.push_back(notifications);
-		uiWindow::DockWindow(fileExplorer, DockRegion::Left);
-		uiWindow::DockWindow(output, DockRegion::Bottom);
-		uiWindow::DockWindow(properties, DockRegion::Right);
-		for (auto* win : m_Windows)
-		{
-			win->OnAttach();
-		}
-
 		m_ShortcutBar = new uiShortcutBar();
 		m_ShortcutBar->OnAttach();
-		std::vector<ShortcutItem> fileGroup = 
+		std::vector<ShortcutItem> fileGroup =
 		{
 			{ "new", "N", "New File", []() { PS_INFO("New File"); } },
 			{ "open", "O", "Open File...", []() { PS_INFO("Open File"); } },
@@ -93,11 +75,28 @@ namespace PulseStudio {
 			{ "nextbookmark", "NB", "Next Bookmark", []() { PS_INFO("Next Bookmark"); } },
 			{ "clearbookmarks", "CB", "Clear Bookmarks", []() { PS_INFO("Clear Bookmarks"); } }
 		};
-
 		m_ShortcutBar->AddGroup(fileGroup, true);
 		m_ShortcutBar->AddGroup(editGroup, true);
 		m_ShortcutBar->AddGroup(buildGroup, true);
 		m_ShortcutBar->AddGroup(bookmarkGroup, false);
+
+		uiWindow::InitDockSystem(0.0f, 110.0f, width, height - 150.0f);
+
+		auto* fileExplorer = new FileExplorer("H:/Projects/CppProject/Pulse-Studio");
+		auto* output = new uiWindow("Output");
+		auto* properties = new uiWindow("Properties");
+		auto* notifications = new uiWindow("Notifications");
+		auto* errorlist = new uiWindow("Error List");
+		m_Windows.push_back(fileExplorer);
+		m_Windows.push_back(output);
+		m_Windows.push_back(properties);
+		uiWindow::DockWindow(fileExplorer, DockRegion::Left);
+		uiWindow::DockWindow(output, DockRegion::Bottom);
+		uiWindow::DockWindow(properties, DockRegion::Right);
+		for (auto* win : m_Windows)
+		{
+			win->OnAttach();
+		}
 
 		codeEditor = new CodeEditor("untitled.cpp");
 	}
@@ -139,6 +138,11 @@ namespace PulseStudio {
 		float leftW = uiWindow::GetDynamicLeftWidth();
 		float rightW = uiWindow::GetDynamicRightWidth();
 		float bottomH = uiWindow::GetDynamicBottomHeight();
+
+		for (auto* win : m_Windows)
+		{
+			win->OnUpdate(deltaTime);
+		}
 
 		DockRegion preview = uiWindow::GetPreviewRegion();
 		if (preview != DockRegion::None)

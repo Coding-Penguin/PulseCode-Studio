@@ -11,3 +11,5 @@
 
 #include "PhotoRenderer.h"
 #include "TextRenderer.h"
+
+#include "FileExplorer.h"

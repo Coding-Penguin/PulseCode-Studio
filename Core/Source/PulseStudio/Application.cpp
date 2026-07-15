@@ -45,7 +45,7 @@ namespace PulseStudio {
 		if (!isFontLoaded())
 		{
 			PS_CORE_INFO("Loading font...");
-			TextRenderer::Get().LoadFont("H:/Projects/CppProject/Pulse-Studio/Core/Resources/Fonts/Ubuntu-L.ttf", 24.0f);
+			TextRenderer::Get().LoadFont("H:/Projects/CppProject/Pulse-Studio/Core/Resources/Fonts/Ubuntu-R.ttf", 24.0f);
 			SetFontLoaded(true);
 			PS_CORE_INFO("Font loaded successfully.");
 		}

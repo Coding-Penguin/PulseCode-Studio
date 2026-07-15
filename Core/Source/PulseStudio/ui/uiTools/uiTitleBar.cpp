@@ -18,15 +18,6 @@ namespace PulseStudio
 
 	uiTitleBar::uiTitleBar()
 	{
-		float btnWidth = 40.0f;
-		float btnHeight = 40.0f;
-		float y = 0;
-		float rightMargin = 0;
-		float startX = Application::Get().GetWindow().GetWidth() - 3 * btnWidth - rightMargin;
-
-		m_MinimizeRect = { startX, y, btnWidth, btnHeight };
-		m_MaximizeRect = { startX + btnWidth, y, btnWidth, btnHeight };
-		m_CloseRect = { startX + 2 * btnWidth, y, btnWidth, btnHeight };
 	}
 	uiTitleBar::~uiTitleBar()
 	{
@@ -161,7 +152,7 @@ namespace PulseStudio
 			updateHover(m_MaximizeRect, m_MaximizeHovered);
 			updateHover(m_CloseRect, m_CloseHovered);
 			return false;
-			}
+		}
 		else if (event.GetEventType() == EventType::MouseButtonPressed)
 		{
 			MouseButtonPressedEvent& e = (MouseButtonPressedEvent&)event;
@@ -261,8 +252,8 @@ namespace PulseStudio
 
 	void uiTitleBar::UpdateWindowButtonsPosition(int windowWidth)
 	{		
-		float btnWidth = 40.0f;
-		float btnHeight = 40.0f;
+		float btnWidth = 50.0f;
+		float btnHeight = 50.0f;
 		float y = 0;
 		float rightMargin = 0;
 		float startX = windowWidth - 3 * btnWidth - rightMargin;
@@ -280,7 +271,7 @@ namespace PulseStudio
 	void uiTitleBar::DrawMinimizeButton(float x, float y, float w, float h, bool hovered)
 	{
 		if (hovered)
-			glColor4f(0.4f, 0.4f, 0.4f, 1.0f);
+			glColor4f(0.3f, 0.3f, 0.3f, 1.0f);
 		else
 			glColor4f(0.0f, 0.0f, 0.0f, 0.0f);
 
@@ -292,8 +283,8 @@ namespace PulseStudio
 		glEnd();
 
 		float lineY = y + h / 2;
-		float left = x + w * 0.2f;
-		float right = x + w * 0.8f;
+		float left = x + w * 0.25f;
+		float right = x + w * 0.75f;
 
 		if (ThemeManager::IsDarkTheme())
 			glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
@@ -310,7 +301,7 @@ namespace PulseStudio
 	void uiTitleBar::DrawMaximizeButton(float x, float y, float w, float h, bool hovered, bool isMaximized)
 	{
 		if (hovered)
-			glColor4f(0.4f, 0.4f, 0.4f, 1.0f);
+			glColor4f(0.3f, 0.3f, 0.3f, 1.0f);
 		else
 			glColor4f(0.0f, 0.0f, 0.0f, 0.0f);
 		glBegin(GL_QUADS);
@@ -328,11 +319,11 @@ namespace PulseStudio
 		float margin;
 		if (isMaximized)
 		{
-			margin = w * 0.23f;
+			margin = w * 0.27f;
 		}
 		else
 		{
-			margin = w * 0.2f;
+			margin = w * 0.25f;
 		}
 		float left = x + margin;
 		float right = x + w - margin;
@@ -383,7 +374,7 @@ namespace PulseStudio
 	void uiTitleBar::DrawCloseButton(float x, float y, float w, float h, bool hovered)
 	{
 		if (hovered)
-			glColor4f(0.8f, 0.2f, 0.2f, 1.0f);
+			glColor4f(1.0f, 0.0f, 0.0f, 1.0f);
 		else
 			glColor4f(0.0f, 0.0f, 0.0f, 0.0f);
 
@@ -394,7 +385,7 @@ namespace PulseStudio
 		glVertex2f(x, y + h);
 		glEnd();
 
-		float margin = w * 0.2f;
+		float margin = w * 0.25f;
 		float left = x + margin;
 		float right = x + w - margin;
 		float top = y + margin;
