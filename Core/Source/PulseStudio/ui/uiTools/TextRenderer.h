@@ -19,6 +19,8 @@ namespace PulseStudio {
 		float GetTextWidth(const std::string& text) const;
 		float GetTextHeight() const;
 
+		static float GetFontSize();
+
 		void Unload();
 
 		bool IsInitialized() const { return m_Initialized; }
@@ -36,7 +38,7 @@ namespace PulseStudio {
 		unsigned int m_TextureID = 0;
 		int m_AtlasWidth = 0, m_AtlasHeight = 0;
 		std::unordered_map<char, CharInfo> m_Chars;
-		float m_FontSize = 0.0f;
+		static float m_FontSize;
 	};
 
 }

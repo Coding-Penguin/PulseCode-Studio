@@ -33,6 +33,8 @@ namespace PulseStudio {
 		int m_HoveredLine = -1;
 		int m_SelectedLine = -1;
 
+		float m_LineHeight = 0.0f;
+
 		float m_ScrollY = 0.0f;
 		float m_TotalHeight = 0.0f;
 
@@ -42,8 +44,8 @@ namespace PulseStudio {
 
 		void RefreshTree();
 		void PopulateNode(FileNode& node, const std::filesystem::path& path);
-		void DrawNode(const FileNode& node, int depth, float& y, float x, float width, float lineHeight);
-		void CalcTreeHeight(const FileNode& node, int depth, float& total, float lineHeight);
+		void DrawNode(const FileNode& node, int depth, float& y, float x, float width);
+		void CalcTreeHeight(const FileNode& node, int depth, float& total);
 		void DrawFolderIcon(float x, float y, bool expanded) const;
 		void DrawFileIcon(float x, float y) const;
 		int GetNodeIndexAtPosition(float mouseX, float mouseY) const;

@@ -11,6 +11,7 @@ namespace PulseStudio {
 	FileExplorer::FileExplorer(const std::string& rootPath)
 		: uiWindow("File Explorer"), m_RootPath(rootPath)
 	{
+		m_LineHeight = TextRenderer::GetFontSize() * 1.35f;
 		SetSize(0, 110, 250, 600);
 		RefreshTree();
 	}
@@ -46,6 +47,15 @@ namespace PulseStudio {
 				child.expanded = false;
 				node.children.push_back(child);
 			}
+			std::sort(node.children.begin(), node.children.end(),
+				[](const FileNode& a, const FileNode& b)
+				{
+					if (a.isFolder != b.isFolder)
+					{
+						return a.isFolder > b.isFolder;
+					}
+					return a.name < b.name;
+				});
 		}
 		catch (const std::exception& e)
 		{
@@ -96,8 +106,7 @@ namespace PulseStudio {
 
 			for (const auto& vn : m_VisibleNodes)
 			{
-				float lineHeight = 22.0f;
-				if (my >= vn.y && my <= vn.y + lineHeight)
+				if (my >= vn.y && my <= vn.y + m_LineHeight)
 				{
 					const FileNode* node = vn.node;
 					if (node->isFolder)
@@ -168,26 +177,25 @@ namespace PulseStudio {
 	{
 		uiWindow::DrawContent();
 
-		float contentX = GetX() + 5;
-		float contentY = GetY() + 35;
-		float contentW = GetWidth() - 5;
-		float contentH = GetHeight() - 35;
+		float contentX = GetX() + 10;
+		float contentY = GetY() + 40;
+		float contentW = GetWidth() - 10;
+		float contentH = GetHeight() - 40;
 
 		Application& app = Application::Get();
 		int winHeight = app.GetWindow().GetHeight();
 		glEnable(GL_SCISSOR_TEST);
 		glScissor((int)contentX, winHeight - (int)(contentY + contentH), (int)contentW, (int)contentH);
 
-		float lineHeight = 22.0f;
 		m_TotalHeight = 0.0f;
-		CalcTreeHeight(m_RootNode, 0, m_TotalHeight, lineHeight);
+		CalcTreeHeight(m_RootNode, 0, m_TotalHeight);
 
 		float maxScroll = std::max(0.0f, m_TotalHeight - contentH);
 		if (m_ScrollY > maxScroll) m_ScrollY = maxScroll;
 		if (m_ScrollY < 0) m_ScrollY = 0;
 
 		float y = contentY - m_ScrollY;
-		DrawNode(m_RootNode, 0, y, contentX, contentW, lineHeight);
+		DrawNode(m_RootNode, 0, y, contentX, contentW);
 
 		if (m_TotalHeight > contentH)
 		{
@@ -205,39 +213,39 @@ namespace PulseStudio {
 		glDisable(GL_SCISSOR_TEST);
 	}
 
-	void FileExplorer::CalcTreeHeight(const FileNode& node, int depth, float& total, float lineHeight)
+	void FileExplorer::CalcTreeHeight(const FileNode& node, int depth, float& total)
 	{
-		total += lineHeight;
+		total += m_LineHeight;
 		if (node.isFolder && node.expanded)
 		{
 			for (const auto& child : node.children)
 			{
-				CalcTreeHeight(child, depth + 1, total, lineHeight);
+				CalcTreeHeight(child, depth + 1, total);
 			}
 		}
 	}
 
-	void FileExplorer::DrawNode(const FileNode& node, int depth, float& y, float x, float width, float lineHeight)
+	void FileExplorer::DrawNode(const FileNode& node, int depth, float& y, float x, float width)
 	{
 		float indent = depth * 16.0f;
 		float iconSize = 16.0f;
 		float textX = x + indent + iconSize + 4;
 
-		if (y + lineHeight < GetY() + 30 || y > GetY() + GetHeight()) 
+		if (y + m_LineHeight < GetY() + 30 || y > GetY() + GetHeight())
 		{
-			y += lineHeight;
+			y += m_LineHeight;
 			if (node.isFolder && node.expanded)
 			{
 				for (const auto& child : node.children)
 				{
-					DrawNode(child, depth + 1, y, x, width, lineHeight);
+					DrawNode(child, depth + 1, y, x, width);
 				}
 			}
 			return;
 		}
 
 		float iconX = x + indent;
-		float iconY = y + (lineHeight - iconSize) / 2;
+		float iconY = y + (m_LineHeight - iconSize) / 2;
 		if (node.isFolder)
 		{
 			DrawFolderIcon(iconX, iconY, node.expanded);
@@ -257,18 +265,18 @@ namespace PulseStudio {
 			glBegin(GL_QUADS);
 			glVertex2f(textX, y);
 			glVertex2f(textX + 50, y);
-			glVertex2f(textX + 50, y + lineHeight);
-			glVertex2f(textX, y + lineHeight);
+			glVertex2f(textX + 50, y + m_LineHeight);
+			glVertex2f(textX, y + m_LineHeight);
 			glEnd();
 		}
 
-		y += lineHeight;
+		y += m_LineHeight;
 
 		if (node.isFolder && node.expanded)
 		{
 			for (const auto& child : node.children)
 			{
-				DrawNode(child, depth + 1, y, x, width, lineHeight);
+				DrawNode(child, depth + 1, y, x, width);
 			}
 		}
 	}
@@ -307,10 +315,9 @@ namespace PulseStudio {
 
 	void FileExplorer::BuildVisibleList(const FileNode& node, int depth, float startY, float& yOffset) const
 	{
-		float lineHeight = 22.0f;
 		float screenY = startY + yOffset - m_ScrollY;
 		m_VisibleNodes.push_back({ &node, depth, screenY });
-		yOffset += lineHeight;
+		yOffset += m_LineHeight;
 		if (node.isFolder && node.expanded)
 		{
 			for (const auto& child : node.children)

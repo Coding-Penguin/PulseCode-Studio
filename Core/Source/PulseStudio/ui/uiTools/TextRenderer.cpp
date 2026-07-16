@@ -9,6 +9,8 @@
 
 namespace PulseStudio {
 
+	float TextRenderer::m_FontSize = 0.0f;
+
 	TextRenderer& TextRenderer::Get()
 	{
 		static TextRenderer instance;
@@ -161,6 +163,11 @@ namespace PulseStudio {
 			glDeleteTextures(1, &m_TextureID);
 			m_TextureID = 0;
 		}
+	}
+
+	float TextRenderer::GetFontSize()
+	{
+		return m_FontSize;
 	}
 
 }
