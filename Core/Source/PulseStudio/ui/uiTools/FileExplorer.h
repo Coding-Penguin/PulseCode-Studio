@@ -17,6 +17,7 @@ namespace PulseStudio {
 	enum class Filetype
 	{
 		CPP,
+		C,
 		Header,
 		Python,
 		Java,

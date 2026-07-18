@@ -17,11 +17,13 @@ namespace PulseStudio {
 
 		// Load Icons
 		m_Folder_Close_Icon.reset(new PhotoRenderer());
-		m_Folder_Close_Icon->LoadFromFile("H:/Projects/CppProject/Pulse-Studio/Core/Resources/Images/Folder_Close_500x500.png");
 		m_Folder_Open_Icon.reset(new PhotoRenderer());
-		m_Folder_Open_Icon->LoadFromFile("H:/Projects/CppProject/Pulse-Studio/Core/Resources/Images/Folder_Open_500x500.png");
 		m_File_Icon.reset(new PhotoRenderer());
 		m_CPP_File_Icon.reset(new PhotoRenderer());
+
+		m_Folder_Close_Icon->LoadFromFile("H:/Projects/CppProject/Pulse-Studio/Core/Resources/Images/Folder_Close_500x500.png");
+		m_Folder_Open_Icon->LoadFromFile("H:/Projects/CppProject/Pulse-Studio/Core/Resources/Images/Folder_Open_500x500.png");
+		m_CPP_File_Icon->LoadFromFile("H:/Projects/CppProject/Pulse-Studio/Core/Resources/Images/CPP_File_500x500.png");
 		if (ThemeManager::IsDarkTheme())
 		{
 			m_File_Icon->LoadFromFile("H:/Projects/CppProject/Pulse-Studio/Core/Resources/Images/File_500x500_White.png");
@@ -30,7 +32,6 @@ namespace PulseStudio {
 		{
 			m_File_Icon->LoadFromFile("H:/Projects/CppProject/Pulse-Studio/Core/Resources/Images/File_500x500_Black.png");
 		}
-		m_CPP_File_Icon->LoadFromFile("H:/Projects/CppProject/Pulse-Studio/Core/Resources/Images/CPP_File_500x500.png");
 	}
 
 	FileExplorer::~FileExplorer()
@@ -214,11 +215,10 @@ namespace PulseStudio {
 					BuildVisibleList(m_RootNode, 0, contentY, yOffset);
 
 					m_HoveredNode = nullptr;
-					float lineHeight = 22.0f;
 					for (const auto& vn : m_VisibleNodes)
 					{
 						float yPos = vn.y;
-						if (my >= yPos && my <= yPos + lineHeight)
+						if (my >= yPos && my <= yPos + m_LineHeight)
 						{
 							m_HoveredNode = vn.node;
 							break;
