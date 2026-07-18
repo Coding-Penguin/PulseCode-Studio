@@ -36,6 +36,9 @@ namespace PulseStudio {
 		inline float GetYOffset() const { return m_YOffset; }
 		inline int GetMods() const { return m_Mods; }
 
+		inline float GetMouseX() const { return Input::GetMouseX(); }
+		inline float GetMouseY() const { return Input::GetMouseY(); }
+
 		std::string ToString() const override
 		{
 			std::stringstream ss;

@@ -1,6 +1,7 @@
 #pragma once
 #include "pspch.h"
 #include "uiWindow.h"
+#include "PhotoRenderer.h"
 
 namespace PulseStudio {
 
@@ -11,6 +12,18 @@ namespace PulseStudio {
 		bool isFolder = false;
 		bool expanded = false;
 		std::vector<FileNode> children;
+	};
+
+	enum class Filetype
+	{
+		CPP,
+		Header,
+		Python,
+		Java,
+		CSharp,
+		Markdown,
+		JSON,
+		lua
 	};
 
 	class FileExplorer : public uiWindow
@@ -42,12 +55,20 @@ namespace PulseStudio {
 		float m_DragStartY = 0.0f;
 		float m_DragStartScrollY = 0.0f;
 
+		const FileNode* m_HoveredNode = nullptr;
+
+		std::unique_ptr<PhotoRenderer> m_Folder_Close_Icon;
+		std::unique_ptr<PhotoRenderer> m_Folder_Open_Icon;
+		std::unique_ptr<PhotoRenderer> m_File_Icon;
+		std::unique_ptr<PhotoRenderer> m_CPP_File_Icon;
+		//std::unique_ptr<PhotoRenderer> m_Python_File_Icon;
+
 		void RefreshTree();
 		void PopulateNode(FileNode& node, const std::filesystem::path& path);
 		void DrawNode(const FileNode& node, int depth, float& y, float x, float width);
 		void CalcTreeHeight(const FileNode& node, int depth, float& total);
 		void DrawFolderIcon(float x, float y, bool expanded) const;
-		void DrawFileIcon(float x, float y) const;
+		void DrawFileIcon(float x, float y, Filetype type) const;
 		int GetNodeIndexAtPosition(float mouseX, float mouseY) const;
 		bool HitTestNode(const FileNode& node, int depth, float& y, float x, float width, float mouseX, float mouseY, int& hitIndex) const;
 

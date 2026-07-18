@@ -11,12 +11,35 @@ namespace PulseStudio {
 	FileExplorer::FileExplorer(const std::string& rootPath)
 		: uiWindow("File Explorer"), m_RootPath(rootPath)
 	{
-		m_LineHeight = TextRenderer::GetFontSize() * 1.35f;
+		m_LineHeight = TextRenderer::GetFontSize() * 1.5f;
 		SetSize(0, 110, 250, 600);
 		RefreshTree();
+
+		// Load Icons
+		m_Folder_Close_Icon.reset(new PhotoRenderer());
+		m_Folder_Close_Icon->LoadFromFile("H:/Projects/CppProject/Pulse-Studio/Core/Resources/Images/Folder_Close_500x500.png");
+		m_Folder_Open_Icon.reset(new PhotoRenderer());
+		m_Folder_Open_Icon->LoadFromFile("H:/Projects/CppProject/Pulse-Studio/Core/Resources/Images/Folder_Open_500x500.png");
+		m_File_Icon.reset(new PhotoRenderer());
+		m_CPP_File_Icon.reset(new PhotoRenderer());
+		if (ThemeManager::IsDarkTheme())
+		{
+			m_File_Icon->LoadFromFile("H:/Projects/CppProject/Pulse-Studio/Core/Resources/Images/File_500x500_White.png");
+		}
+		else
+		{
+			m_File_Icon->LoadFromFile("H:/Projects/CppProject/Pulse-Studio/Core/Resources/Images/File_500x500_Black.png");
+		}
+		m_CPP_File_Icon->LoadFromFile("H:/Projects/CppProject/Pulse-Studio/Core/Resources/Images/CPP_File_500x500.png");
 	}
 
-	FileExplorer::~FileExplorer() {}
+	FileExplorer::~FileExplorer()
+	{
+		m_Folder_Close_Icon->Unload();
+		m_Folder_Open_Icon->Unload();
+		m_File_Icon->Unload();
+		m_CPP_File_Icon->Unload();
+	}
 
 	void FileExplorer::SetFileOpenCallback(std::function<void(const std::string&)> callback)
 	{
@@ -79,69 +102,83 @@ namespace PulseStudio {
 
 		dispatcher.Dispatch<MouseScrolledEvent>([this](MouseScrolledEvent& e)
 			{
-			float contentH = GetHeight() - 30;
-			float maxScroll = std::max(0.0f, m_TotalHeight - contentH);
-			if (maxScroll <= 0) return false;
+				float mx = e.GetMouseX();
+				float my = e.GetMouseY();
 
-			m_ScrollY -= e.GetYOffset() * 20.0f;
-			if (m_ScrollY < 0) m_ScrollY = 0;
-			if (m_ScrollY > maxScroll) m_ScrollY = maxScroll;
-			return true;
+				float contentX = GetX();
+				float contentY = GetY() + 30;
+				float contentW = GetWidth();
+				float contentH = GetHeight() - 30;
+
+				if (!(mx >= contentX && mx <= contentX + contentW &&
+					my >= contentY && my <= contentY + contentH))
+				{
+					return false;
+				}
+
+				float maxScroll = std::max(0.0f, m_TotalHeight - contentH);
+				if (maxScroll <= 0) return false;
+
+				m_ScrollY -= e.GetYOffset() * 20.0f;
+				if (m_ScrollY < 0) m_ScrollY = 0;
+				if (m_ScrollY > maxScroll) m_ScrollY = maxScroll;
+
+				return true;
 			});
 
 		dispatcher.Dispatch<MouseButtonPressedEvent>([this](MouseButtonPressedEvent& e)
 			{
-			float mx = e.GetMouseX(), my = e.GetMouseY();
-			float contentX = GetX();
-			float contentY = GetY() + 30;
-			float contentW = GetWidth();
-			float contentH = GetHeight() - 30;
+				float mx = e.GetMouseX(), my = e.GetMouseY();
+				float contentX = GetX();
+				float contentY = GetY() + 30;
+				float contentW = GetWidth();
+				float contentH = GetHeight() - 30;
 
-			float scrollbarX = contentX + contentW - 8;
-			if (mx >= scrollbarX) return false;
+				float scrollbarX = contentX + contentW - 8;
+				if (mx >= scrollbarX) return false;
 
-			m_VisibleNodes.clear();
-			float yOffset = 0.0f;
-			BuildVisibleList(m_RootNode, 0, contentY, yOffset);
+				m_VisibleNodes.clear();
+				float yOffset = 0.0f;
+				BuildVisibleList(m_RootNode, 0, contentY, yOffset);
 
-			for (const auto& vn : m_VisibleNodes)
-			{
-				if (my >= vn.y && my <= vn.y + m_LineHeight)
+				for (const auto& vn : m_VisibleNodes)
 				{
-					const FileNode* node = vn.node;
-					if (node->isFolder)
+					if (my >= vn.y && my <= vn.y + m_LineHeight)
 					{
-						std::function<bool(FileNode&)> findAndToggle = [&](FileNode& n) -> bool
-							{
-							if (&n == node)
-							{
-								n.expanded = !n.expanded;
-								if (n.expanded && n.children.empty())
-								{
-									PopulateNode(n, n.path);
-								}
-								return true;
-							}
-							for (auto& child : n.children)
-							{
-								if (findAndToggle(child)) return true;
-							}
-							return false;
-							};
-						findAndToggle(m_RootNode);
-						return true;
-					}
-					else
-					{
-						if (m_FileOpenCallback)
+						const FileNode* node = vn.node;
+						if (node->isFolder)
 						{
-							m_FileOpenCallback(node->path);
+							std::function<bool(FileNode&)> findAndToggle = [&](FileNode& n) -> bool
+								{
+									if (&n == node)
+									{
+										n.expanded = !n.expanded;
+										if (n.expanded && n.children.empty())
+										{
+											PopulateNode(n, n.path);
+										}
+										return true;
+									}
+									for (auto& child : n.children)
+									{
+										if (findAndToggle(child)) return true;
+									}
+									return false;
+								};
+							findAndToggle(m_RootNode);
+							return true;
 						}
-						return true;
+						else
+						{
+							if (m_FileOpenCallback)
+							{
+								m_FileOpenCallback(node->path);
+							}
+							return true;
+						}
 					}
 				}
-			}
-			return false;
+				return false;
 			});
 
 		dispatcher.Dispatch<MouseMovedEvent>([this](MouseMovedEvent& e)
@@ -158,16 +195,46 @@ namespace PulseStudio {
 					if (m_ScrollY > maxScroll) m_ScrollY = maxScroll;
 					return true;
 				}
-			return false;
+				else
+				{
+					float mx = e.GetX(), my = e.GetY();
+					float contentX = GetX();
+					float contentY = GetY() + 30;
+					float contentW = GetWidth();
+					float contentH = GetHeight() - 30;
+
+					if (mx < contentX || mx > contentX + contentW || my < contentY || my > contentY + contentH)
+					{
+						m_HoveredNode = nullptr;
+						return false;
+					}
+
+					m_VisibleNodes.clear();
+					float yOffset = 0.0f;
+					BuildVisibleList(m_RootNode, 0, contentY, yOffset);
+
+					m_HoveredNode = nullptr;
+					float lineHeight = 22.0f;
+					for (const auto& vn : m_VisibleNodes)
+					{
+						float yPos = vn.y;
+						if (my >= yPos && my <= yPos + lineHeight)
+						{
+							m_HoveredNode = vn.node;
+							break;
+						}
+					}
+				}
+				return false;
 			});
 
 		dispatcher.Dispatch<MouseButtonReleasedEvent>([this](MouseButtonReleasedEvent& e)
 			{
-			if (e.GetMouseButton() == GLFW_MOUSE_BUTTON_LEFT)
-			{
-				m_IsDraggingScrollbar = false;
-			}
-			return false;
+				if (e.GetMouseButton() == GLFW_MOUSE_BUTTON_LEFT)
+				{
+					m_IsDraggingScrollbar = false;
+				}
+				return false;
 			});
 
 		return false;
@@ -244,6 +311,17 @@ namespace PulseStudio {
 			return;
 		}
 
+		if (&node == m_HoveredNode)
+		{
+			glColor4f(0.5f, 0.5f, 0.5f, 0.5f);
+			glBegin(GL_QUADS);
+			glVertex2f(x, y);
+			glVertex2f(x + width, y);
+			glVertex2f(x + width, y + m_LineHeight);
+			glVertex2f(x, y + m_LineHeight);
+			glEnd();
+		}
+
 		float iconX = x + indent;
 		float iconY = y + (m_LineHeight - iconSize) / 2;
 		if (node.isFolder)
@@ -252,12 +330,12 @@ namespace PulseStudio {
 		}
 		else
 		{
-			DrawFileIcon(iconX, iconY);
+			DrawFileIcon(iconX, iconY, Filetype::Python);
 		}
 
 		if (TextRenderer::Get().IsInitialized())
 		{
-			TextRenderer::Get().DrawText(node.name, textX, y + 2, 0.9f, 0.9f, 0.9f, 1.0f);
+			TextRenderer::Get().DrawText(node.name, textX + m_LineHeight, y + 2, 0.9f, 0.9f, 0.9f, 1.0f);
 		}
 		else
 		{
@@ -291,6 +369,8 @@ namespace PulseStudio {
 			glVertex2f(x + 12, y);
 			glVertex2f(x + 6, y + 10);
 			glEnd();
+
+			m_Folder_Open_Icon->Draw(x + 20, y - 7, m_LineHeight * 0.7f, m_LineHeight * 0.7f);
 		}
 		else
 		{
@@ -299,18 +379,21 @@ namespace PulseStudio {
 			glVertex2f(x, y + 10);
 			glVertex2f(x + 10, y + 5);
 			glEnd();
+
+			m_Folder_Close_Icon->Draw(x + 20, y - 7, m_LineHeight * 0.7f, m_LineHeight * 0.7f);
 		}
 	}
 
-	void FileExplorer::DrawFileIcon(float x, float y) const
+	void FileExplorer::DrawFileIcon(float x, float y, Filetype type) const
 	{
-		glColor4f(0.6f, 0.6f, 0.6f, 1.0f);
-		glBegin(GL_QUADS);
-		glVertex2f(x, y);
-		glVertex2f(x + 10, y);
-		glVertex2f(x + 10, y + 10);
-		glVertex2f(x, y + 10);
-		glEnd();
+		if (type == Filetype::CPP)
+		{
+			m_CPP_File_Icon->Draw(x + 20, y - 7, m_LineHeight * 0.7f, m_LineHeight * 0.7f);
+		}
+		else
+		{
+			m_File_Icon->Draw(x + 20, y - 7, m_LineHeight * 0.7f, m_LineHeight * 0.7f);
+		}
 	}
 
 	void FileExplorer::BuildVisibleList(const FileNode& node, int depth, float startY, float& yOffset) const

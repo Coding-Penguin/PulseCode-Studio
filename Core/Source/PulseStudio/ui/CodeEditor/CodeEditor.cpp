@@ -118,8 +118,19 @@ namespace PulseStudio {
 		if (event.GetEventType() == EventType::MouseScrolled)
 		{
 			MouseScrolledEvent& e = (MouseScrolledEvent&)event;
-			m_View->HandleScroll(e.GetXOffset() * 30.0f, -e.GetYOffset() * 30.0f);
-			return true;
+			float mx = e.GetMouseX(), my = e.GetMouseY();
+			float viewX = m_View->GetX();
+			float viewY = m_View->GetY();
+			float viewW = m_View->GetWidth();
+			float viewH = m_View->GetHeight();
+
+			if (mx >= viewX && mx <= viewX + viewW &&
+				my >= viewY && my <= viewY + viewH)
+			{
+				m_View->HandleScroll(e.GetXOffset() * 30.0f, -e.GetYOffset() * 30.0f);
+				return true;
+			}
+			return false;
 		}
 		return false;
 	}
@@ -160,6 +171,7 @@ namespace PulseStudio {
 	{
 		m_Highlighter.SetLanguage(mode);
 	}
+
 	void CodeEditor::ProcessKeyEvent(KeyPressedEvent& e)
 	{
 		int key = e.GetKeyCode();
