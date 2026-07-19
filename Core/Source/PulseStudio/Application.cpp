@@ -45,7 +45,7 @@ namespace PulseStudio {
 		if (!isFontLoaded())
 		{
 			PS_CORE_INFO("Loading font...");
-			TextRenderer::Get().LoadFont("H:/Projects/CppProject/Pulse-Studio/Core/Resources/Fonts/Ubuntu-R.ttf", 24.0f);
+			TextRenderer::Get().LoadFont("H:/Projects/CppProject/Pulse-Studio/Core/Resources/Fonts/Ubuntu-R.ttf", 20.0f);
 			SetFontLoaded(true);
 			PS_CORE_INFO("Font loaded successfully.");
 		}
@@ -54,6 +54,19 @@ namespace PulseStudio {
 	Application::~Application()
 	{
 		TextRenderer::Get().Unload();
+
+		auto* window = glfwGetCurrentContext();
+		if (window)
+		{
+			glfwSetMouseButtonCallback(window, nullptr);
+			glfwSetCursorPosCallback(window, nullptr);
+			glfwSetScrollCallback(window, nullptr);
+			glfwSetKeyCallback(window, nullptr);
+			glfwSetCharCallback(window, nullptr);
+			glfwSetWindowCloseCallback(window, nullptr);
+			glfwSetWindowSizeCallback(window, nullptr);
+			glfwSetFramebufferSizeCallback(window, nullptr);
+		}
 
 		PS_INFO("Application destructor called.");
 		PS_CORE_WARN("Shutting down Pulse Studio...");

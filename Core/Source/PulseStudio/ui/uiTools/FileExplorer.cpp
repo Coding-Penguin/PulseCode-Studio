@@ -20,10 +20,12 @@ namespace PulseStudio {
 		m_Folder_Open_Icon.reset(new PhotoRenderer());
 		m_File_Icon.reset(new PhotoRenderer());
 		m_CPP_File_Icon.reset(new PhotoRenderer());
+		m_Python_File_Icon.reset(new PhotoRenderer());
 
 		m_Folder_Close_Icon->LoadFromFile("H:/Projects/CppProject/Pulse-Studio/Core/Resources/Images/Folder_Close_500x500.png");
 		m_Folder_Open_Icon->LoadFromFile("H:/Projects/CppProject/Pulse-Studio/Core/Resources/Images/Folder_Open_500x500.png");
 		m_CPP_File_Icon->LoadFromFile("H:/Projects/CppProject/Pulse-Studio/Core/Resources/Images/CPP_File_500x500.png");
+		m_Python_File_Icon->LoadFromFile("H:/Projects/CppProject/Pulse-Studio/Core/Resources/Images/Python_File_500x500.png");
 		if (ThemeManager::IsDarkTheme())
 		{
 			m_File_Icon->LoadFromFile("H:/Projects/CppProject/Pulse-Studio/Core/Resources/Images/File_500x500_White.png");
@@ -40,6 +42,7 @@ namespace PulseStudio {
 		m_Folder_Open_Icon->Unload();
 		m_File_Icon->Unload();
 		m_CPP_File_Icon->Unload();
+		m_Python_File_Icon->Unload();
 	}
 
 	void FileExplorer::SetFileOpenCallback(std::function<void(const std::string&)> callback)
@@ -127,58 +130,167 @@ namespace PulseStudio {
 				return true;
 			});
 
+		//dispatcher.Dispatch<MouseButtonPressedEvent>([this](MouseButtonPressedEvent& e)
+		//	{
+		//		float mx = e.GetMouseX(), my = e.GetMouseY();
+		//		float contentX = GetX();
+		//		float contentY = GetY() + 30;
+		//		float contentW = GetWidth();
+		//		float contentH = GetHeight() - 30;
+
+		//		float scrollbarX = contentX + contentW - 8;
+		//		if (mx >= scrollbarX) return false;
+
+		//		m_VisibleNodes.clear();
+		//		float yOffset = 0.0f;
+		//		BuildVisibleList(m_RootNode, 0, contentY, yOffset);
+
+		//		for (const auto& vn : m_VisibleNodes)
+		//		{
+		//			if (my >= vn.y && my <= vn.y + m_LineHeight)
+		//			{
+		//				const FileNode* node = vn.node;
+		//				if (node->isFolder)
+		//				{
+		//					std::function<bool(FileNode&)> findAndToggle = [&](FileNode& n) -> bool
+		//						{
+		//							if (&n == node)
+		//							{
+		//								n.expanded = !n.expanded;
+		//								if (n.expanded && n.children.empty())
+		//								{
+		//									PopulateNode(n, n.path);
+		//								}
+		//								return true;
+		//							}
+		//							for (auto& child : n.children)
+		//							{
+		//								if (findAndToggle(child)) return true;
+		//							}
+		//							return false;
+		//						};
+		//					findAndToggle(m_RootNode);
+		//					return true;
+		//				}
+		//				else
+		//				{
+		//					if (m_FileOpenCallback)
+		//					{
+		//						m_FileOpenCallback(node->path);
+		//					}
+		//					return true;
+		//				}
+		//			}
+		//		}
+		//		return false;
+		//	});
 		dispatcher.Dispatch<MouseButtonPressedEvent>([this](MouseButtonPressedEvent& e)
 			{
+				if (e.GetMouseButton() != GLFW_MOUSE_BUTTON_LEFT) return false;
+
 				float mx = e.GetMouseX(), my = e.GetMouseY();
 				float contentX = GetX();
 				float contentY = GetY() + 30;
 				float contentW = GetWidth();
 				float contentH = GetHeight() - 30;
 
-				float scrollbarX = contentX + contentW - 8;
-				if (mx >= scrollbarX) return false;
+				if (mx < contentX || mx > contentX + contentW || my < contentY || my > contentY + contentH)
+					return false;
+
+				float currentTime = (float)glfwGetTime();
 
 				m_VisibleNodes.clear();
 				float yOffset = 0.0f;
 				BuildVisibleList(m_RootNode, 0, contentY, yOffset);
 
+				const FileNode* clickedNode = nullptr;
+				int clickedDepth = 0;
+				float clickedY = 0.0f;
 				for (const auto& vn : m_VisibleNodes)
 				{
 					if (my >= vn.y && my <= vn.y + m_LineHeight)
 					{
-						const FileNode* node = vn.node;
-						if (node->isFolder)
+						clickedNode = vn.node;
+						clickedDepth = vn.depth;
+						clickedY = vn.y;
+						break;
+					}
+				}
+				if (!clickedNode) return false;
+
+				float indent = clickedDepth * 16.0f;
+				float iconX = contentX + indent;
+				float iconSize = 16.0f;
+				bool isOnTriangle = (mx >= iconX && mx <= iconX + iconSize + 10 && my >= clickedY && my <= clickedY + m_LineHeight);
+
+				if (clickedNode->isFolder)
+				{
+					if (isOnTriangle)
+					{
+						std::function<bool(FileNode&)> findAndToggle = [&](FileNode& n) -> bool
+							{
+							if (&n == clickedNode)
+							{
+								n.expanded = !n.expanded;
+								if (n.expanded && n.children.empty()) 
+								{
+									PopulateNode(n, n.path);
+								}
+								return true;
+							}
+							for (auto& child : n.children)
+							{
+								if (findAndToggle(child)) return true;
+							}
+							return false;
+							};
+						findAndToggle(m_RootNode);
+						return true;
+					}
+					else
+					{
+						if (m_LastClickedNode == clickedNode && (currentTime - m_LastClickTime) < 0.3f)
 						{
 							std::function<bool(FileNode&)> findAndToggle = [&](FileNode& n) -> bool
 								{
-									if (&n == node)
+								if (&n == clickedNode) {
+									n.expanded = !n.expanded;
+									if (n.expanded && n.children.empty())
 									{
-										n.expanded = !n.expanded;
-										if (n.expanded && n.children.empty())
-										{
-											PopulateNode(n, n.path);
-										}
-										return true;
+										PopulateNode(n, n.path);
 									}
-									for (auto& child : n.children)
-									{
-										if (findAndToggle(child)) return true;
-									}
-									return false;
+									return true;
+								}
+								for (auto& child : n.children)
+								{
+									if (findAndToggle(child)) return true;
+								}
+								return false;
 								};
 							findAndToggle(m_RootNode);
+							m_LastClickedNode = nullptr;
+							m_LastClickTime = 0.0f;
 							return true;
 						}
 						else
 						{
-							if (m_FileOpenCallback)
-							{
-								m_FileOpenCallback(node->path);
-							}
+							m_LastClickedNode = clickedNode;
+							m_LastClickTime = currentTime;
 							return true;
 						}
 					}
 				}
+				else
+				{
+					if (m_FileOpenCallback)
+					{
+						m_FileOpenCallback(clickedNode->path);
+					}
+					m_LastClickedNode = nullptr;
+					m_LastClickTime = 0.0f;
+					return true;
+				}
+
 				return false;
 			});
 
@@ -330,7 +442,7 @@ namespace PulseStudio {
 		}
 		else
 		{
-			DrawFileIcon(iconX, iconY, Filetype::Python);
+			DrawFileIcon(iconX, iconY, GetFileExtension(GetFileName(node.path)));
 		}
 
 		if (TextRenderer::Get().IsInitialized())
@@ -366,18 +478,18 @@ namespace PulseStudio {
 		{
 			glBegin(GL_TRIANGLES);
 			glVertex2f(x, y);
-			glVertex2f(x + 12, y);
-			glVertex2f(x + 6, y + 10);
+			glVertex2f(x + 10, y);
+			glVertex2f(x + 5, y + 10);
 			glEnd();
 
 			m_Folder_Open_Icon->Draw(x + 20, y - 7, m_LineHeight * 0.7f, m_LineHeight * 0.7f);
 		}
 		else
 		{
-			glBegin(GL_TRIANGLES);
+			glBegin(GL_LINE_LOOP);
 			glVertex2f(x, y);
 			glVertex2f(x, y + 10);
-			glVertex2f(x + 10, y + 5);
+			glVertex2f(x + 7, y + 5);
 			glEnd();
 
 			m_Folder_Close_Icon->Draw(x + 20, y - 7, m_LineHeight * 0.7f, m_LineHeight * 0.7f);
@@ -389,6 +501,10 @@ namespace PulseStudio {
 		if (type == Filetype::CPP)
 		{
 			m_CPP_File_Icon->Draw(x + 20, y - 7, m_LineHeight * 0.7f, m_LineHeight * 0.7f);
+		}
+		else if (type == Filetype::Python)
+		{
+			m_Python_File_Icon->Draw(x + 20, y - 7, m_LineHeight * 0.7f, m_LineHeight * 0.7f);
 		}
 		else
 		{
@@ -408,6 +524,37 @@ namespace PulseStudio {
 				BuildVisibleList(child, depth + 1, startY, yOffset);
 			}
 		}
+	}
+
+	std::string FileExplorer::GetFileName(const std::string& path) const
+	{
+		for (int i = path.size() - 1; i >= 0; --i)
+		{
+			if (path[i] == '/' || path[i] == '\\')
+			{
+				return path.substr(i + 1);
+			}
+		}
+		return path;
+	}
+
+	Filetype FileExplorer::GetFileExtension(const std::string& filename) const
+	{
+		size_t pos = filename.find_last_of('.');
+		if (pos != std::string::npos)
+		{
+			std::string ext = filename.substr(pos + 1);
+			if (ext == "cpp") return Filetype::CPP;
+			else if (ext == "c") return Filetype::C;
+			else if (ext == "h") return Filetype::Header;
+			else if (ext == "py") return Filetype::Python;
+			else if (ext == "java") return Filetype::Java;
+			else if (ext == "cs") return Filetype::CSharp;
+			else if (ext == "md") return Filetype::Markdown;
+			else if (ext == "json") return Filetype::JSON;
+			else if (ext == "lua") return Filetype::lua;
+		}
+		return Filetype::Unknown;
 	}
 
 }

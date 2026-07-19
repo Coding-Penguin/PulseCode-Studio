@@ -51,7 +51,7 @@ namespace PulseStudio {
 		m_FontSize = fontSize;
 		float scale = stbtt_ScaleForPixelHeight(&info, fontSize);
 
-		const int atlasW = 512, atlasH = 512;
+		const int atlasW = 2048, atlasH = 2048;
 		unsigned char* texData = new unsigned char[atlasW * atlasH];
 		memset(texData, 0, atlasW * atlasH);
 
