@@ -1,13 +1,25 @@
-<div align="center">
-<img src="./Core/Resources/Images/PulseStudio_500x500_White.png" alt="icon" style="width: 30%; height: auto;">
+<div align = "center">
+<img src = "./Core/Resources/Images/PulseStudio_500x500_White.png" alt = "icon" style = "width: 30%; height: auto;">
 </div>
-<div align="center">
+<div align = "center">
 
 # Pulse-Studio · 脉冲光
+### An open-source IDE with native runtime based on C++/OpenGL.
 </div>
-<div align="center">
+<div align = "center">
 
-### 代码所及，必有回响
-
-#### 以脉冲之力，点亮数字新境
+[中文](./README-zh.md)
 </div>
+<div align = "center">
+
+### Where code reaches, an echo returns
+#### With the pulse of creation, light up the digital beyond
+</div>
+
+<div align = "center">
+<img src = "" alt = "Runtime Screenshot" style = "width: 30%; height: auto;">
+</div>
+
+<!-- ## What Pulse-Studio Is? -->
+
+
