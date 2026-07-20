@@ -1,8 +1,8 @@
 #pragma once
 
-#include "PulseStudio/Input.h"
+#include "PulseCode/Input.h"
 
-namespace PulseStudio {
+namespace PulseCode {
 
 	class WindowsInput : public Input
 	{

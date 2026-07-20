@@ -2,9 +2,9 @@
 #include "WindowsInput.h"
 
 #include "GLFW/glfw3.h"
-#include "PulseStudio/Application.h"
+#include "PulseCode/Application.h"
 
-namespace PulseStudio {
+namespace PulseCode {
 
 	Input* Input::s_Instance = nullptr;
 

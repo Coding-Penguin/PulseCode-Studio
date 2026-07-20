@@ -1,14 +1,14 @@
 #pragma once
 
-#include "PulseStudio/Application.h"
-#include "PulseStudio/Layer.h"
-#include "PulseStudio/LayerStack.h"
-#include "PulseStudio/Log.h"
-#include "PulseStudio/Input.h"
+#include "PulseCode/Application.h"
+#include "PulseCode/Layer.h"
+#include "PulseCode/LayerStack.h"
+#include "PulseCode/Log.h"
+#include "PulseCode/Input.h"
 
 // UI
-#include "PulseStudio/ui/uiLayer.h"
+#include "PulseCode/ui/uiLayer.h"
 
 // Codes
-#include "PulseStudio/KeyCodes.h"
-#include "PulseStudio/MouseButtonCodes.h"
+#include "PulseCode/KeyCodes.h"
+#include "PulseCode/MouseButtonCodes.h"

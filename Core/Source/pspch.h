@@ -25,15 +25,15 @@
 #include <iomanip>
 #include <format>
 
-#include "PulseStudio/Core.h"
-#include "PulseStudio/Log.h"
-#include "PulseStudio/Theme.h"
-#include "PulseStudio/Channel.h"
-#include "PulseStudio/Settings.h"
+#include "PulseCode/Core.h"
+#include "PulseCode/Log.h"
+#include "PulseCode/Theme.h"
+#include "PulseCode/Channel.h"
+#include "PulseCode/Settings.h"
 
-#include "PulseStudio/KeyCodes.h"
-#include "PulseStudio/MouseButtonCodes.h"
+#include "PulseCode/KeyCodes.h"
+#include "PulseCode/MouseButtonCodes.h"
 
 #ifdef PS_PLATFORM_WINDOWS
-	#include <Windows.h>
+#include <Windows.h>
 #endif

@@ -1,4 +1,4 @@
-workspace "Pulse Studio IDE"
+workspace "PulseCode-Studio IDE"
    architecture "x64"
    configurations { "Debug", "Release", "Dist" }
    startproject "App"

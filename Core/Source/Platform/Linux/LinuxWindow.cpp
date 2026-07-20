@@ -16,14 +16,14 @@
 	#include <X11/Xatom.h>
 #endif
 
-#include "PulseStudio/Log.h"
-#include "PulseStudio/Events/ApplicationEvent.h"
-#include "PulseStudio/Events/KeyEvent.h"
-#include "PulseStudio/Events/MouseEvent.h"
+#include "PulseCode/Log.h"
+#include "PulseCode/Events/ApplicationEvent.h"
+#include "PulseCode/Events/KeyEvent.h"
+#include "PulseCode/Events/MouseEvent.h"
 
 #include <stb_image.h>
 
-namespace PulseStudio {
+namespace PulseCode {
 
 	static bool s_GLFWInitialized = false;
 
@@ -378,11 +378,11 @@ namespace PulseStudio {
 
 		if (ThemeManager::IsDarkTheme())
 		{
-			iconPath = "H:/Projects/CppProject/Pulse-Studio/Core/Resources/Images/PulseStudio_500x500_White.png";
+			iconPath = "H:/Projects/CppProject/PulseCode-Studio/Core/Resources/Images/PulseStudio_500x500_White.png";
 		}
 		else
 		{
-			iconPath = "H:/Projects/CppProject/Pulse-Studio/Core/Resources/Images/PulseStudio_500x500_Black.png";
+			iconPath = "H:/Projects/CppProject/PulseCode-Studio/Core/Resources/Images/PulseStudio_500x500_Black.png";
 		}
 
 		unsigned char* data = stbi_load(iconPath.c_str(), &width, &height, &channels, 4);
