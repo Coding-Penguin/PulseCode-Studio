@@ -1,8 +1,7 @@
 #pragma once
 #include <string>
 #include <unordered_map>
-
-struct GLFWwindow;
+#include <stb_truetype.h>
 
 namespace PulseCode {
 

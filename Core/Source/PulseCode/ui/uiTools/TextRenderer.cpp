@@ -98,18 +98,22 @@ namespace PulseCode {
 
 	void TextRenderer::DrawText(const std::string& text, float x, float y, float r, float g, float b, float a)
 	{
-		if (this == nullptr) return;
-		if (!m_Initialized)
-		{
-			PS_CORE_ERROR("TextRenderer not initialized or no atlas");
-			return;
-		}
+		if (!m_Initialized || m_TextureID == 0) return;
+		if (text.empty()) return;
+
+		glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_TEXTURE_BIT);
+		glPushMatrix();
+
 		glEnable(GL_TEXTURE_2D);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 		glBindTexture(GL_TEXTURE_2D, m_TextureID);
 		glColor4f(r, g, b, a);
-		glBegin(GL_QUADS);
+
 		float curX = x;
 		float curY = y;
+		glBegin(GL_QUADS);
 		for (char c : text)
 		{
 			auto it = m_Chars.find(c);
@@ -121,14 +125,19 @@ namespace PulseCode {
 			float y1 = curY + ci.height;
 			float xpos = curX + ci.xoff;
 			float ypos = curY + ci.yoff;
+
 			glTexCoord2f(ci.x0, ci.y0); glVertex2f(xpos, ypos);
 			glTexCoord2f(ci.x1, ci.y0); glVertex2f(xpos + ci.width, ypos);
 			glTexCoord2f(ci.x1, ci.y1); glVertex2f(xpos + ci.width, ypos + ci.height);
 			glTexCoord2f(ci.x0, ci.y1); glVertex2f(xpos, ypos + ci.height);
+
 			curX += ci.advance;
 		}
+
 		glEnd();
-		glDisable(GL_TEXTURE_2D);
+
+		glPopMatrix();
+		glPopAttrib();
 	}
 
 	float TextRenderer::GetTextWidth(const std::string& text) const

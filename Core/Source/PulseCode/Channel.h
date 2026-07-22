@@ -2,7 +2,7 @@
 
 namespace PulseCode
 {
-	
+
 	enum class Channel
 	{
 		Current = 0,
@@ -24,4 +24,5 @@ namespace PulseCode
 		ChannelManager& operator=(const ChannelManager&&) = delete;
 		static Channel s_Channel;
 	};
+
 }

@@ -13,6 +13,8 @@ namespace PulseCode {
 	{
 	public:
 		static CodeEditor& Get();
+
+		CodeEditor();
 		CodeEditor(const std::string& path);
 		virtual ~CodeEditor();
 
@@ -38,13 +40,15 @@ namespace PulseCode {
 		std::string GetFileExtension(const std::string& path) const;
 
 		void SetText(const std::string& text);
+
+		static EditorView* GetView();
 	private:
 		static CodeEditor instance;
 
 		TextBuffer m_Buffer;
 		Cursor m_Cursor;
 		Highlight m_Highlighter;
-		EditorView* m_View;
+		static EditorView* m_View;
 
 		GLFWcursor* m_ArrowCursor;
 		GLFWcursor* m_IBeamCursor;

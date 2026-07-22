@@ -2,6 +2,7 @@
 #include "PulseCode/Layer.h"
 #include "uiTools/uiStatusBar.h"
 #include "uiTools/uiShortcutBar.h"
+#include "CodeEditor/EditorTabManager.h"
 #include <vector>
 
 namespace PulseCode {
@@ -31,6 +32,8 @@ namespace PulseCode {
 		static bool IsPointOverAnyWindow(float x, float y);
 
 		OutputWindow* GetOutputWindow() const { return m_OutputWindow; }
+
+		EditorTabManager* GetTabManager() const { return m_TabManager; }
 	private:
 		std::vector<uiWindow*> m_Windows;
 		uiTitleBar* titleBar = nullptr;
@@ -38,6 +41,7 @@ namespace PulseCode {
 		CodeEditor* codeEditor = nullptr;
 		uiShortcutBar* m_ShortcutBar = nullptr;
 		OutputWindow* m_OutputWindow = nullptr;
+		EditorTabManager* m_TabManager = nullptr;
 	};
 
 }

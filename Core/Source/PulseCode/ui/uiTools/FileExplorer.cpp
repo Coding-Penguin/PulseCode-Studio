@@ -5,6 +5,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include "PulseCode/Application.h"
+#include "../uiLayer.h"
 
 namespace PulseCode {
 
@@ -22,18 +23,11 @@ namespace PulseCode {
 		m_CPP_File_Icon.reset(new PhotoRenderer());
 		m_Python_File_Icon.reset(new PhotoRenderer());
 
-		m_Folder_Close_Icon->LoadFromFile("H:/Projects/CppProject/PulseCode-Studio/Core/Resources/Images/Folder_Close_500x500.png");
-		m_Folder_Open_Icon->LoadFromFile("H:/Projects/CppProject/PulseCode-Studio/Core/Resources/Images/Folder_Open_500x500.png");
-		m_CPP_File_Icon->LoadFromFile("H:/Projects/CppProject/PulseCode-Studio/Core/Resources/Images/CPP_File_500x500.png");
-		m_Python_File_Icon->LoadFromFile("H:/Projects/CppProject/PulseCode-Studio/Core/Resources/Images/Python_File_500x500.png");
-		if (ThemeManager::IsDarkTheme())
-		{
-			m_File_Icon->LoadFromFile("H:/Projects/CppProject/PulseCode-Studio/Core/Resources/Images/File_500x500_White.png");
-		}
-		else
-		{
-			m_File_Icon->LoadFromFile("H:/Projects/CppProject/PulseCode-Studio/Core/Resources/Images/File_500x500_Black.png");
-		}
+		m_Folder_Close_Icon->LoadFromFile("H:/Projects/CppProject/PulseCode-Studio/Core/Resources/Images/Folder_Close.png");
+		m_Folder_Open_Icon->LoadFromFile("H:/Projects/CppProject/PulseCode-Studio/Core/Resources/Images/Folder_Open.png");
+		m_CPP_File_Icon->LoadFromFile("H:/Projects/CppProject/PulseCode-Studio/Core/Resources/Images/CPP_File.png");
+		m_Python_File_Icon->LoadFromFile("H:/Projects/CppProject/PulseCode-Studio/Core/Resources/Images/Python_File.png");
+		m_File_Icon->LoadFromFile("H:/Projects/CppProject/PulseCode-Studio/Core/Resources/Images/File.png");
 	}
 
 	FileExplorer::~FileExplorer()
@@ -123,7 +117,7 @@ namespace PulseCode {
 				float maxScroll = std::max(0.0f, m_TotalHeight - contentH);
 				if (maxScroll <= 0) return false;
 
-				m_ScrollY -= e.GetYOffset() * 20.0f;
+				m_ScrollY -= e.GetYOffset() * 50.0f;
 				if (m_ScrollY < 0) m_ScrollY = 0;
 				if (m_ScrollY > maxScroll) m_ScrollY = maxScroll;
 
@@ -195,7 +189,7 @@ namespace PulseCode {
 					}
 					else
 					{
-						if (m_LastClickedNode == clickedNode && (currentTime - m_LastClickTime) < 0.3f)
+						if (m_LastClickedNode == clickedNode && (currentTime - m_LastClickTime) < 0.5f)
 						{
 							std::function<bool(FileNode&)> findAndToggle = [&](FileNode& n) -> bool
 								{
@@ -229,12 +223,13 @@ namespace PulseCode {
 				}
 				else
 				{
-					if (m_LastClickedNode == clickedNode && (currentTime - m_LastClickTime) < 0.3f)
+					if (m_LastClickedNode == clickedNode && (currentTime - m_LastClickTime) < 0.5f)
 					{
 						if (m_FileOpenCallback)
 						{
 							m_FileOpenCallback(clickedNode->path);
 						}
+
 						m_LastClickedNode = nullptr;
 						m_LastClickTime = 0.0f;
 						return true;
@@ -403,7 +398,10 @@ namespace PulseCode {
 
 		if (TextRenderer::Get().IsInitialized())
 		{
-			TextRenderer::Get().DrawText(node.name, textX + m_LineHeight, y + 2, 0.9f, 0.9f, 0.9f, 1.0f);
+			if (ThemeManager::IsDarkTheme())
+				TextRenderer::Get().DrawText(node.name, textX + m_LineHeight, y + 2, 0.9f, 0.9f, 0.9f, 1.0f);
+			else
+				TextRenderer::Get().DrawText(node.name, textX + m_LineHeight, y + 2, 0.1f, 0.1f, 0.1f, 1.0f);
 		}
 		else
 		{
@@ -429,7 +427,11 @@ namespace PulseCode {
 
 	void FileExplorer::DrawFolderIcon(float x, float y, bool expanded) const
 	{
-		glColor4f(0.8f, 0.8f, 0.8f, 1.0f);
+		if (ThemeManager::IsDarkTheme())
+			glColor4f(0.8f, 0.8f, 0.8f, 1.0f);
+		else
+			glColor4f(0.2f, 0.2f, 0.2f, 1.0f);
+
 		if (expanded)
 		{
 			glBegin(GL_TRIANGLES);

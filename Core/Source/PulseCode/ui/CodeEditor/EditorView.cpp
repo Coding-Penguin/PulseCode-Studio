@@ -44,17 +44,21 @@ namespace PulseCode
 	{
 		m_LineHeight = lineHeight;
 	}
-
+	
 	void EditorView::HandleScroll(float deltaX, float deltaY)
 	{
 		m_ScrollX += deltaX;
 		m_ScrollY += deltaY;
+		m_ScrollYOffset += deltaY;
 		ClampScroll();
 
 		if (m_ScrollX < 0)
 			m_ScrollX = 0;
-		if (m_ScrollY < 0)
-			m_ScrollY = 0;
+
+		float totalHeight = m_buffer.GetLineCount() * m_LineHeight;
+		float maxScrollY = std::max(0.0f, totalHeight - m_H + m_LineHeight);
+		if (m_ScrollYOffset < 0) m_ScrollYOffset = 0;
+		if (m_ScrollYOffset > maxScrollY) m_ScrollYOffset = maxScrollY;
 	}
 
 	void EditorView::UpdateCursorBlink(float deltaTime)
@@ -74,9 +78,9 @@ namespace PulseCode
 		m_buffer = buffer;
 
 		if (ThemeManager::IsDarkTheme())
-			glColor4f(0.1f, 0.1f, 0.15f, 0.5f);
+			glColor4f(0.1f, 0.1f, 0.15f, 1.0f);
 		else
-			glColor4f(0.9f, 0.9f, 0.95f, 0.5f);
+			glColor4f(0.9f, 0.9f, 0.95f, 1.0f);
 
 		glBegin(GL_POLYGON);
 		glVertex2f(m_X, m_Y);
@@ -112,7 +116,7 @@ namespace PulseCode
 
 		UpdateCursorBlink(deltaTime);
 
-		float startY = m_Y - m_ScrollY;
+		float startY = m_Y - m_ScrollYOffset;
 
 		UpdateLineNumberWidth(buffer);
 
@@ -163,6 +167,9 @@ namespace PulseCode
 					{
 					case HighlightColor::Keyword:
 						font = m_BoldItalicFont;
+						break;
+					case HighlightColor::ControlKeyword:
+						font = m_ItalicFont;
 						break;
 					case HighlightColor::String:
 						font = m_BoldFont;
@@ -236,74 +243,6 @@ namespace PulseCode
 		}
 	}
 
-	void EditorView::DrawTextLines(const TextBuffer& buffer, const Highlight& highlighter,
-		int firstLine, int lastLine, float startY)
-	{
-		if (!m_RegularFont || !m_RegularFont->IsInitialized())
-			return;
-		float x = m_X + m_LineNumberWidth - m_ScrollX;
-		float y = startY;
-		for (int i = firstLine; i < lastLine; ++i)
-		{
-			const std::string& line = buffer.GetLine(i);
-			float curX = x;
-
-			std::vector<HighlightSpan> spans = highlighter.HighlightLine(line);
-			int lastPos = 0;
-			for (const auto& span : spans)
-			{
-				if (lastPos < span.start)
-				{
-					std::string normal = line.substr(lastPos, span.start - lastPos);
-					m_RegularFont->DrawText(normal, curX, y, 0.9f, 0.9f, 0.9f, 1.0f);
-					curX += m_RegularFont->GetTextWidth(normal);
-				}
-				std::string highlighted = line.substr(span.start, span.end - span.start);
-				TextRenderer* font = m_RegularFont;
-				switch (span.color)
-				{
-				case HighlightColor::Keyword:
-					font = m_BoldItalicFont;
-					break;
-				case HighlightColor::String:
-					font = m_BoldFont;
-					break;
-				case HighlightColor::Comment:
-					font = m_ItalicFont;
-					break;
-				case HighlightColor::Number:
-					font = m_RegularFont;
-					break;
-				case HighlightColor::Preprocessor:
-					font = m_BoldFont;
-					break;
-				default:
-					font = m_RegularFont;
-					break;
-				}
-				if (!font)
-					font = m_RegularFont;
-				if (!font)
-				{
-					PS_CORE_ERROR("No valid font available, skip drawing");
-				}
-
-				Highlight highlighter;
-
-				glm::vec3 color = highlighter.GetColorForHighlight(span.color);
-				font->DrawText(highlighted, curX, y, color.r, color.g, color.b, 1.0f);
-				curX += font->GetTextWidth(highlighted);
-				lastPos = span.end;
-			}
-			if (lastPos < (int)line.size())
-			{
-				std::string rest = line.substr(lastPos);
-				m_RegularFont->DrawText(rest, curX, y, 0.9f, 0.9f, 0.9f, 1.0f);
-			}
-			y += m_LineHeight;
-		}
-	}
-
 	void EditorView::DrawCursor(const Cursor& cursor, float cursorX, float cursorY)
 	{
 		if (ThemeManager::IsDarkTheme())
@@ -332,7 +271,7 @@ namespace PulseCode
 		if (localY < 0)
 			localY = 0;
 
-		int line = (int)((localY + m_ScrollY) / m_LineHeight);
+		int line = (int)((localY + m_ScrollYOffset) / m_LineHeight);
 		if (line < 0)
 			line = 0;
 		int lineCount = buffer.GetLineCount();
@@ -571,11 +510,12 @@ namespace PulseCode
 	{
 		float totalHeight = m_buffer.GetLineCount() * m_LineHeight;
 		float maxScrollY = std::max(0.0f, totalHeight - m_H + m_LineHeight);
-		if (m_ScrollY < 0)
-			m_ScrollY = 0;
-		if (m_ScrollY > maxScrollY)
-			m_ScrollY = maxScrollY;
-
+	
+		if (m_ScrollYOffset < 0)
+			m_ScrollYOffset = 0;
+		if (m_ScrollYOffset > maxScrollY)
+			m_ScrollYOffset = maxScrollY;
+	
 		// Horizontal scrolling is currently unrestricted (expandable in the future)
 	}
 
@@ -586,13 +526,13 @@ namespace PulseCode
 		float cursorY = line * m_LineHeight;
 		float cursorX = col * m_CharWidth;
 
-		if (cursorY < m_ScrollY)
+		if (cursorY < m_ScrollYOffset)
 		{
-			m_ScrollY = cursorY;
+			m_ScrollYOffset = cursorY;
 		}
-		else if (cursorY + m_LineHeight > m_ScrollY + m_H)
+		else if (cursorY + m_LineHeight > m_ScrollYOffset + m_H)
 		{
-			m_ScrollY = cursorY + m_LineHeight - m_H;
+			m_ScrollYOffset = cursorY + m_LineHeight - m_H;
 		}
 
 		// Horizontal scroll...
@@ -616,7 +556,7 @@ namespace PulseCode
 		if (totalHeight <= m_H)
 			return m_Y;
 		float maxScrollY = totalHeight - m_H;
-		float scrollRatio = m_ScrollY / maxScrollY;
+		float scrollRatio = m_ScrollYOffset / maxScrollY;
 		float trackHeight = m_H - GetScrollbarThumbHeight();
 		return m_Y + scrollRatio * trackHeight;
 	}

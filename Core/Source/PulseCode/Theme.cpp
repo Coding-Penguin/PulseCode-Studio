@@ -1,6 +1,5 @@
 #include "pspch.h"
 #include "Theme.h"
-#include "Settings.h"
 
 namespace PulseCode
 {

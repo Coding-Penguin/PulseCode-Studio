@@ -1,12 +1,12 @@
 <div align = "center">
-<img src = "./Core/Resources/Images/PulseStudio_500x500_White.png" alt = "图标" style = "width: 20%; height: auto;">
+<img src = "./Core/Resources/Images/PulseCodeStudio_White.png" alt = "图标" style = "width: 20%; height: auto;">
 </div>
 <div align = "center">
 
-# Pulse-Studio · 脉冲光
+# PulseCode-Studio · 脉冲光
 <strong> 以 C++ / OpenGL 为原生运行时的开源集成开发环境。 </strong>
 </div>
-<div align="center"><em>「脉冲光」为本IDE中文名；工程与包名仍使用 <code>Pulse-Studio</code>。</em></div>
+<div align="center"><em>「脉冲光」为本IDE中文名；工程与包名仍使用 <code>PulseCode-Studio</code>。</em></div>
 <div align = "center">
 
 [English](./README.md)
@@ -26,8 +26,8 @@
 <em> IDE处于 <code>编译</code> 时的实际运行画面截图 </em>
 </div>
 
-<!-- ## Pulse-Studio 是什么 -->
+<!-- ## PulseCode-Studio 是什么 -->
 
 ## 许可证
 
-Pulse-Studio 基于 Apache 协议发布，详见 `LICENSE`。
+PulseCode-Studio 基于 Apache 协议发布，详见 `LICENSE`。

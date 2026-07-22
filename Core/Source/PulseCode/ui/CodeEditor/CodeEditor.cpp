@@ -10,6 +10,21 @@
 
 namespace PulseCode {
 
+	EditorView* CodeEditor::m_View = nullptr;
+
+	CodeEditor::CodeEditor()
+	{
+		m_Buffer.LoadFromString("");
+		m_Cursor.MoveTo(0, 0);
+		m_Highlighter.SetLanguage(Language::Text);
+
+		m_View = &EditorView::Get();
+
+		GLFWwindow* window = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
+		m_ArrowCursor = glfwCreateStandardCursor(GLFW_ARROW_CURSOR);
+		m_IBeamCursor = glfwCreateStandardCursor(GLFW_IBEAM_CURSOR);
+	}
+
 	CodeEditor::CodeEditor(const std::string& path)
 	{
 		m_Buffer.LoadFromFile(path);
@@ -126,7 +141,7 @@ namespace PulseCode {
 			if (mx >= viewX && mx <= viewX + viewW &&
 				my >= viewY && my <= viewY + viewH)
 			{
-				m_View->HandleScroll(e.GetXOffset() * 30.0f, -e.GetYOffset() * 30.0f);
+				m_View->HandleScroll(e.GetXOffset() * 50.0f, -e.GetYOffset() * 50.0f);
 				return true;
 			}
 			return false;
@@ -645,6 +660,11 @@ namespace PulseCode {
 		m_Cursor.MoveTo(0, 0);
 		m_View->HandleScroll(0, 0);
 		m_View->EnsureCursorVisible(m_Cursor, m_Buffer);
+	}
+
+	EditorView* CodeEditor::GetView()
+	{
+		return m_View;
 	}
 
 }

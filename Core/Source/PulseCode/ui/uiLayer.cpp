@@ -87,13 +87,13 @@ namespace PulseCode {
 		auto* fileExplorer = new FileExplorer("H:/Projects/CppProject/PulseCode-Studio");
 		fileExplorer->SetFileOpenCallback([this](const std::string& path)
 			{
-				if (codeEditor)
+				if (this->m_TabManager)
 				{
-					codeEditor->LoadFile(path);
+					this->m_TabManager->OpenFile(path);
 				}
 				else
 				{
-					PS_CORE_ERROR("CodeEditor not initialized!");
+					PS_CORE_ERROR("TabManager is null!");
 				}
 			});
 		auto* output = new uiWindow("Output");
@@ -110,6 +110,15 @@ namespace PulseCode {
 		{
 			win->OnAttach();
 		}
+
+		m_TabManager = new EditorTabManager();
+		int topOffset = 110;
+		int bottomOffset = 40;
+		float tabX = 0;
+		float tabY = topOffset;
+		float tabW = width;
+		float tabH = height - topOffset - bottomOffset;
+		m_TabManager->SetBounds(tabX, tabY, tabW, tabH);
 	}
 
 	void uiLayer::OnDetach() 
@@ -138,21 +147,26 @@ namespace PulseCode {
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-		MouseCircle::Get().OnUpdate(deltaTime);
-
-		uiWindow::DrawDockAreas();
-
 		double mx, my;
 		glfwGetCursorPos(static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow()), &mx, &my);
-		uiWindow::DrawDockPanel(mx, my);
+
+		float centerX = uiWindow::GetCenterX();
+		float centerY = uiWindow::GetCenterY();
+		float centerW = uiWindow::GetCenterW();
+		float centerH = uiWindow::GetCenterH();
 
 		float leftW = uiWindow::GetDynamicLeftWidth();
 		float rightW = uiWindow::GetDynamicRightWidth();
 		float bottomH = uiWindow::GetDynamicBottomHeight();
 
-		for (auto* win : m_Windows)
+		MouseCircle::Get().OnUpdate(deltaTime);
+
+		uiWindow::DrawDockAreas();
+
+		if (m_StatusBar)
 		{
-			win->OnUpdate(deltaTime);
+			m_StatusBar->OnUpdate(deltaTime);
+			m_StatusBar->SetStatusText("Ready");
 		}
 
 		DockRegion preview = uiWindow::GetPreviewRegion();
@@ -185,7 +199,7 @@ namespace PulseCode {
 			y += uiWindow::GetMainY();
 
 			glEnable(GL_BLEND);
-			glColor4f(0.2f, 0.5f, 0.8f, 0.4f);
+			glColor4f(0.2f, 0.5f, 0.8f, 0.5f);
 			glBegin(GL_QUADS);
 			glVertex2f(x, y);
 			glVertex2f(x + w, y);
@@ -194,29 +208,42 @@ namespace PulseCode {
 			glEnd();
 		}
 
+		if (titleBar) titleBar->OnUpdate(deltaTime);
+
 		if (m_ShortcutBar)
 		{
 			m_ShortcutBar->OnUpdate(deltaTime);
 			m_ShortcutBar->Draw();
 		}
-		if (m_StatusBar) m_StatusBar->OnUpdate(deltaTime);
 
-		if (titleBar) titleBar->OnUpdate(deltaTime);
+		if (codeEditor)
+		{
+			codeEditor->SetViewBounds(centerX, centerY + 30, centerW, centerH - 30);
+			codeEditor->OnUpdate(deltaTime);
+		}
 
-		if (m_StatusBar) m_StatusBar->SetStatusText("Ready");
+		if (m_TabManager)
+		{
+			m_TabManager->SetBounds(centerX, centerY, centerW, centerH);
 
-		float centerX = uiWindow::GetCenterX();
-		float centerY = uiWindow::GetCenterY();
-		float centerW = uiWindow::GetCenterW();
-		float centerH = uiWindow::GetCenterH();
-		codeEditor->SetViewBounds(centerX, centerY, centerW, centerH);
-		codeEditor->OnUpdate(deltaTime);
-		glDisable(GL_BLEND);
+			m_TabManager->OnUpdate(deltaTime);
+			m_TabManager->Draw();
+		}
+
+		for (auto* win : m_Windows)
+		{
+			win->OnUpdate(deltaTime);
+		}
+
+		uiWindow::DrawDockPanel(mx, my);
 	}
 
 	bool uiLayer::OnEvent(Event& event)
 	{
 		MouseCircle::Get().OnEvent(event);
+
+		if (m_TabManager && m_TabManager->OnEvent(event))
+			return true;
 
 		if (titleBar && titleBar->OnEvent(event))
 			return true;
@@ -236,7 +263,7 @@ namespace PulseCode {
 		dispatcher.Dispatch<WindowResizeEvent>([this](WindowResizeEvent& e)
 			{
 			int width = e.GetWidth(), height = e.GetHeight();
-			uiWindow::OnWindowResize(width, height - 145.0f);
+			uiWindow::OnWindowResize(width, height - 145);
 
 			Application& app = Application::Get();
 			float leftW = app.GetWindow().GetWidth() * 0.2f,

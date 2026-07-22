@@ -8,6 +8,7 @@ namespace PulseCode {
 	{
 		Default,
 		Keyword,
+		ControlKeyword,
 		String,
 		Comment,
 		Number,
@@ -44,16 +45,18 @@ namespace PulseCode {
 		{
 			switch (color)
 			{
-			case HighlightColor::Keyword:		return glm::vec3(0.3f, 0.7f, 1.0f);
-			case HighlightColor::String:		return glm::vec3(0.8f, 0.6f, 0.2f);
-			case HighlightColor::Comment:		return glm::vec3(0.3f, 0.7f, 0.3f);
-			case HighlightColor::Number:		return glm::vec3(0.7f, 0.7f, 0.8f);
-			case HighlightColor::Preprocessor:	return glm::vec3(0.5f, 0.5f, 0.5f);
-			default:							return (ThemeManager::IsDarkTheme() ? glm::vec3(0.9f, 0.9f, 0.95f) : glm::vec3(0.1f, 0.1f, 0.15f));
+			case HighlightColor::Keyword:
+			case HighlightColor::ControlKeyword:	return glm::vec3(0.3f, 0.7f, 1.0f);
+			case HighlightColor::String:			return glm::vec3(0.8f, 0.6f, 0.2f);
+			case HighlightColor::Comment:			return glm::vec3(0.3f, 0.7f, 0.3f);
+			case HighlightColor::Number:			return glm::vec3(0.7f, 0.7f, 0.8f);
+			case HighlightColor::Preprocessor:		return glm::vec3(0.5f, 0.5f, 0.5f);
+			default:								return (ThemeManager::IsDarkTheme() ? glm::vec3(0.9f, 0.9f, 0.95f) : glm::vec3(0.1f, 0.1f, 0.15f));
 			}
 		}
 	private:
 		std::vector<std::string> m_Keywords;
+		std::vector<std::string> m_ControlKeywords;
 		Language m_languageMode;
 
 		void InitCppKeywords();

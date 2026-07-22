@@ -24,15 +24,18 @@
 #include <mutex>
 #include <iomanip>
 #include <format>
+#include <codecvt>
+#include <locale>
 
 #include "PulseCode/Core.h"
 #include "PulseCode/Log.h"
 #include "PulseCode/Theme.h"
 #include "PulseCode/Channel.h"
-#include "PulseCode/Settings.h"
 
 #include "PulseCode/KeyCodes.h"
 #include "PulseCode/MouseButtonCodes.h"
+
+#include "Global.h"
 
 #ifdef PS_PLATFORM_WINDOWS
 #include <Windows.h>

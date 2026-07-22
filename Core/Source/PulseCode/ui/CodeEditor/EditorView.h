@@ -48,6 +48,7 @@ namespace PulseCode {
 
 		float m_X, m_Y, m_W, m_H;
 		float m_ScrollX = 0.0f, m_ScrollY = 0.0f;
+		float m_ScrollYOffset = 0.0f;	// Alternative m_ScrollY
 		float m_LineHeight = m_FontSize;
 		float m_CharWidth = 12.0f;
 		float m_LineNumberWidth = 50.0f;
@@ -91,8 +92,6 @@ namespace PulseCode {
 		void DrawMatchingBracket(const TextBuffer& buffer, int firstLine, int lastLine, float startY);
 
 		void DrawLineNumbers(int firstLine, int lastLine, float startY);
-		void DrawTextLines(const TextBuffer& buffer, const Highlight& highlighter,
-			int firstLine, int lastLine, float startY);
 		void DrawCursor(const Cursor& cursor, float cursorX, float cursorY);
 		void ClampScroll();
 	};

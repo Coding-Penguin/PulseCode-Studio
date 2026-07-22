@@ -42,11 +42,11 @@ namespace PulseCode {
 
 		Input::Init();
 
-		if (!isFontLoaded())
+		if (!s_FontLoaded)
 		{
 			PS_CORE_INFO("Loading font...");
 			TextRenderer::Get().LoadFont("H:/Projects/CppProject/PulseCode-Studio/Core/Resources/Fonts/Ubuntu-R.ttf", 20.0f);
-			SetFontLoaded(true);
+			s_FontLoaded = true;
 			PS_CORE_INFO("Font loaded successfully.");
 		}
 	}

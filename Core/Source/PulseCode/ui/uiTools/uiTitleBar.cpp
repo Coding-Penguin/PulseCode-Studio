@@ -27,9 +27,9 @@ namespace PulseCode
 	{
 		m_Logo.reset(new PhotoRenderer());
 		if (ThemeManager::IsDarkTheme())
-			m_Logo->LoadFromFile("H:/Projects/CppProject/PulseCode-Studio/Core/Resources/Images/PulseStudio_500x500_White.png");
+			m_Logo->LoadFromFile("H:/Projects/CppProject/PulseCode-Studio/Core/Resources/Images/PulseCodeStudio_White.png");
 		else
-			m_Logo->LoadFromFile("H:/Projects/CppProject/PulseCode-Studio/Core/Resources/Images/PulseStudio_500x500_Black.png");
+			m_Logo->LoadFromFile("H:/Projects/CppProject/PulseCode-Studio/Core/Resources/Images/PulseCodeStudio_Black.png");
 		
 		PS_INFO("Logo loaded: {0}", m_Logo->IsLoaded());
 
@@ -271,9 +271,16 @@ namespace PulseCode
 	void uiTitleBar::DrawMinimizeButton(float x, float y, float w, float h, bool hovered)
 	{
 		if (hovered)
-			glColor4f(0.3f, 0.3f, 0.3f, 1.0f);
+		{
+			if (ThemeManager::IsDarkTheme())
+				glColor4f(0.3f, 0.3f, 0.3f, 1.0f);
+			else
+				glColor4f(0.7f, 0.7f, 0.7f, 1.0f);
+		}
 		else
+		{
 			glColor4f(0.0f, 0.0f, 0.0f, 0.0f);
+		}
 
 		glBegin(GL_QUADS);
 		glVertex2f(x, y);
@@ -301,9 +308,17 @@ namespace PulseCode
 	void uiTitleBar::DrawMaximizeButton(float x, float y, float w, float h, bool hovered, bool isMaximized)
 	{
 		if (hovered)
-			glColor4f(0.3f, 0.3f, 0.3f, 1.0f);
+		{
+			if (ThemeManager::IsDarkTheme())
+				glColor4f(0.3f, 0.3f, 0.3f, 1.0f);
+			else
+				glColor4f(0.7f, 0.7f, 0.7f, 1.0f);
+		}
 		else
+		{
 			glColor4f(0.0f, 0.0f, 0.0f, 0.0f);
+		}
+
 		glBegin(GL_QUADS);
 		glVertex2f(x, y); glVertex2f(x + w, y);
 		glVertex2f(x + w, y + h); glVertex2f(x, y + h);
